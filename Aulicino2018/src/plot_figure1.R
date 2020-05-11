@@ -8,10 +8,10 @@ library(ggforce)
 
 #setwd("~/src/CSI-Microbes-analysis/Aulicino2018/")
 
-#counts <- read.table(snakemake@input[[1]], sep="\t", header=TRUE, row.names=1)
-counts <- read.table("output/Pt0_genus_PathSeq_microbe_reads.tsv", sep="\t", header=TRUE, row.names=1)
-#pdata <- read.table(snakemake@input[[2]], sep="\t", header = TRUE, row.names=1)
-pdata <- read.table("output/Pt0_genus_PathSeq_metadata.tsv", sep="\t", header=TRUE, row.names=1)
+counts <- read.table(snakemake@input[[1]], sep="\t", header=TRUE, row.names=1)
+#counts <- read.table("output/Pt0_genus_PathSeq_microbe_reads.tsv", sep="\t", header=TRUE, row.names=1)
+pdata <- read.table(snakemake@input[[2]], sep="\t", header = TRUE, row.names=1)
+#pdata <- read.table("output/Pt0_genus_PathSeq_metadata.tsv", sep="\t", header=TRUE, row.names=1)
 
 row.names(pdata) <- gsub("-", ".", row.names(pdata))
 # pdata <- read.table("output/Pt0_PathSeq_metadata.tsv", sep="\t", header = TRUE, row.names=1)
@@ -68,11 +68,21 @@ df$Genera <- row.names(df)
 df <- df[0:25,]
 print(df)
 
-# Try to plot
+df <- as.data.frame(df)
+df <- df[order(df$AUC.uninfected, decreasing=FALSE), ]
+df$Genera <- factor(df$Genera, levels=df$Genera)
 
-# Figure 1B - plot table
-fig.1b <- ggtexttable(df[, c("Genera", "FDR", "AUC.uninfected")], rows=NULL)
+# Try to plot
+fig.1b <- ggplot(data=df, aes(x=Genera, y=AUC.uninfected)) + 
+  geom_bar(stat="identity") +
+  geom_text(data=df, aes(
+    x=Genera, 
+    y=AUC.uninfected-0.2,
+    label=paste("FDR pval =", round(FDR, digits = 3) , sep="")),
+    colour="white") +
+  coord_flip() +
+  theme_pubr(legend="bottom")
 
 ggarrange(fig.1a, fig.1b, ncol=2, nrow=1, labels=c("B", "C"))
 
-ggsave(snakemake@output[[1]], width=11, height=7)
+ggsave(snakemake@output[[1]], width=10, height=6)
