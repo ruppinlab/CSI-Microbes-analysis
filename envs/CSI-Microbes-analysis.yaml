@@ -1,0 +1,14 @@
+name: CSI-Microbes
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconductor-scran
+  - bioconductor-scater
+  - bioconductor-singlecellexperiment
+  - pandas
+  - r-ggplot2
+  - r-dplyr
+  - r-ggpubr
+  - snakemake
