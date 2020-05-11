@@ -11,4 +11,5 @@ dependencies:
   - r-ggplot2
   - r-dplyr
   - r-ggpubr
+  - r-ggforce
   - snakemake
