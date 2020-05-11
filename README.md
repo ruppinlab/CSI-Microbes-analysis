@@ -15,3 +15,12 @@ First, you will need the PathSeq output files for Aulicino2018, which should go 
 cd Aulicino2018
 snakemake --cores 1 plot_fig1
 ```
+
+## Generating Figure 2A
+
+You will need the PathSeq output files for Chung2017.
+
+```
+cd Chung2017
+snakemake --cores 1 plot_figure2a
+```

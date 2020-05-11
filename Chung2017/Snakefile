@@ -1,0 +1,93 @@
+from os.path import join
+import pandas as pd
+
+wildcard_constraints:
+    patient="BC01|BC03|BC04|BC05|BC06|BC07|BC08|BC10"
+
+
+patients = ["BC03", "BC04", "BC06", "BC07", "BC08"]
+
+EDGER_RESULTS = join("output", "{tax_level}_{method}_edgeR_{norm_method}_results_{patient}-{celltype}.tsv")
+MICROBE_CPM_PLOT = join("output", "{tax_level}-{microbe}_microbe_cpm-{celltype}.png")
+EDGER_SPIKE_RESULTS = join("output", "{tax_level}_edgeR_spike_results_{patient}-{celltype}.tsv")
+
+COMBINED_FILTER_METRICS = join("output", "dataset-filter-metrics.tsv")
+NORM_COMP_PLOT = join("output", "normalization-comparison-{patient}-{celltype}-{microbe}-{tax_level}-{method}-plot.png")
+
+SPIKE_NORM_PLOT = join("output", "spike-normalization-{patient}-{celltype}-{microbe}-{tax_level}-{method}-plot.png")
+
+TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+BINOM_MARKERS = join("output", "binomial-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+
+FIGURE_2A = join("output", "figure2a.png")
+# parameters
+SPIKE_PREFIX = "RNA_SPIKE"
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+include: "../rules/spikein.smk"
+include: "../rules/plotting.smk"
+
+rule all:
+    input:
+        FIGURE_2A
+
+rule plot_figure2a:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(patient="BC06", method="PathSeq", tax_level="genus"),
+        PATIENT_MICROBE_READ_TABLE.format(patient="BC06", method="PathSeq", tax_level="species"),
+        PATIENT_SAMPLE_METADATA.format(patient="BC06", method="PathSeq", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(patient="BC06", method="PathSeq", tax_level="species")
+    output:
+        FIGURE_2A
+    script:
+        "src/plot_figure2a.R"
+
+rule convert_PathSeq_to_read_counts:
+    wildcard_constraints:
+        method="PathSeq"
+    params:
+        join("data", "PathSeq", "{}-{}", "pathseq.txt")
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv"
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "src/convert_PathSeq_output_to_read_counts.py"
+
+
+rule combine_STAR_output:
+    params:
+        join("data", "star", "{}-{}", "_STARpass2", "ReadsPerGene.out.tab")
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv",
+    output:
+        STAR_READCOUNT_TABLE
+    script:
+        "../src/combine_star_read_files.py"
+
+rule combine_filter_metrics:
+    input:
+        "data/samples.tsv",
+    output:
+        COMBINED_FILTER_METRICS
+    script:
+        "../src/combine_filter_metrics.py"
+
+rule download_filter_metrics:
+    shell:
+        "rsync -avc --include='filter-metrics.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Chung2017/identify-microbes-workflow/output/PathSeq/ filter-metrics/"
+
+# download all Kraken files
+# rsync -avc --include='*-sequences.biom' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Chung2017/identify-microbes-workflow/output/ data/
+# we are currently missing 53 files for PathSeq
+
+# download STAR read count files
+# rsync -avc --include='ReadsPerGene.out.tab' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Chung2017/identify-microbes-workflow/output/ data/
+
+# download PathSeq files
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Chung2017/identify-microbes-workflow/output/ data/
