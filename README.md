@@ -24,3 +24,11 @@ You will need the PathSeq output files for Chung2017.
 cd Chung2017
 snakemake --cores 1 plot_figure2a
 ```
+
+## Generating Figure 2C
+
+```
+cd Jerby-Arnon2018
+rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Jerby-Arnon2018/identify-microbes-workflow/output/ data/
+snakemake --cores 1 plot_figure2c
+```
