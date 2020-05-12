@@ -1,5 +1,5 @@
 wildcard_constraints:
-    tax_level="root|superkingdom|phylum|class|order|family|genus|species"
+    tax_level="root|superkingdom|phylum|class|order|family|genus|species|no_rank"
 
 
 SAMPLES_FILE = join("data", "samples.tsv")
