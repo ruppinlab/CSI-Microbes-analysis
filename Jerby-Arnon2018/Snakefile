@@ -22,21 +22,22 @@ include: "../rules/plotting.smk"
 
 rule all:
     input:
-        expand(COMBINED_WILCOX_MARKERS, patient=[
-            "Mel102", "Mel103", "Mel105","Mel106", "Mel110", "Mel112","Mel129pa",
-            "Mel194"
-            ],
-               method="PathSeq", celltype_of_interest="Tumor", celltype="Tumor",
-               tax_level="species", norm="deconv"),
-        # expand(DECONV_NORM_PLOT, microbe=["Propionibacterium"], method="PathSeq",
-        #        celltype="celltype1", tax_level="genus", patient="Mel129pa"),
-        expand(DECONV_NORM_PLOT, microbe=[
-            "Coprinopsis", "Heterobasidion", "Phanerochaete", "Chryseobacterium",
-            "Laccaria", "Brevundimonas", "Enhydrobacter", "Paeniglutamicibacter",
-            "Anthracocystis"
-            ],
-               method="PathSeq", celltype="celltype1", tax_level="genus",
-               patient="Mel106"),
+        FIGURE2C
+        # expand(COMBINED_WILCOX_MARKERS, patient=[
+        #     "Mel102", "Mel103", "Mel105","Mel106", "Mel110", "Mel112","Mel129pa",
+        #     "Mel194"
+        #     ],
+        #        method="PathSeq", celltype_of_interest="Tumor", celltype="Tumor",
+        #        tax_level="species", norm="deconv"),
+        # # expand(DECONV_NORM_PLOT, microbe=["Propionibacterium"], method="PathSeq",
+        # #        celltype="celltype1", tax_level="genus", patient="Mel129pa"),
+        # expand(DECONV_NORM_PLOT, microbe=[
+        #     "Coprinopsis", "Heterobasidion", "Phanerochaete", "Chryseobacterium",
+        #     "Laccaria", "Brevundimonas", "Enhydrobacter", "Paeniglutamicibacter",
+        #     "Anthracocystis"
+        #     ],
+        #        method="PathSeq", celltype="celltype1", tax_level="genus",
+        #        patient="Mel106"),
         #expand(ALL_DECONV_NORM_PLOT, microbe=["Fusobacterium"], method="PathSeq", celltype="patient", tax_level="genus"),
         #expand(ALL_DECONV_NORM_PLOT, microbe=["Fusobacterium_periodonticum", "Fusobacterium_nucleatum"], method="PathSeq", celltype="patient", tax_level="species"),
         # expand(DECONV_NORM_PLOT, microbe=["Delftia", "Plasmodium", "Bradyrhizobium"], patient=["Mel98"], method="PathSeq", celltype="cellType", tax_level="genus"),
@@ -50,10 +51,10 @@ rule all:
 
 rule plot_figure2c:
     input:
-        PATIENT_MICROBE_READ_TABLE.format(method="PathSeq", tax_level="genus", patient="Mel129pa"),
-        PATIENT_SAMPLE_METADATA.format(method="PathSeq", tax_level="genus", patient="Mel129pa"),
-        PATIENT_MICROBE_READ_TABLE.format(method="PathSeq", tax_level="species", patient="Mel106"),
-        PATIENT_SAMPLE_METADATA.format(method="PathSeq", tax_level="species", patient="Mel106")
+        PATIENT_MICROBE_READ_TABLE.format(method="PathSeq", tax_level="genus", kingdom="Bacteria", patient="Mel129pa"),
+        PATIENT_SAMPLE_METADATA.format(method="PathSeq", tax_level="genus", kingdom="Bacteria", patient="Mel129pa"),
+        PATIENT_MICROBE_READ_TABLE.format(method="PathSeq", tax_level="species", kingdom="Fungi", patient="Mel106"),
+        PATIENT_SAMPLE_METADATA.format(method="PathSeq", tax_level="species", kingdom="Fungi", patient="Mel106")
     output:
         FIGURE2C
     script:
@@ -208,4 +209,4 @@ rule convert_PathSeq_to_read_counts:
 
 
 
-# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Jerby-Arnon2018/identify-microbes-workflow/output/ data/
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Jerby-Arnon2018/identify-microbes-workflow/output/ data/

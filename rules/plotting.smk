@@ -13,7 +13,7 @@ MICROBE_CPM_PLOT = join("output", "{tax_level}-{method}-{microbe}_microbe_cpm-{c
 READCOUNT_SWARMPLOT = join("output", "{tax_level}-{method}-{celltype}-totalreads-swarmplot.png")
 NUM_HUMAN_READS_MICROBE_READS_PLOT = join("output", "{tax_level}-{method}_total_reads_human_microbes-{celltype}.png")
 NUM_HUMAN_GENES_MICROBE_OTU_PLOT = join("output", "microbes_{tax_level}-{method}_human_genes-{celltype}.png")
-DECONV_NORM_PLOT = join("output", "deconv-normalization-{patient}-{celltype}-{microbe}-{tax_level}-{method}-plot.png")
+DECONV_NORM_PLOT = join("output", "deconv-normalization-{patient}-{celltype}-{microbe}-{tax_level}-{kingdom}-{method}-plot.png")
 ALL_DECONV_NORM_PLOT = join("output", "deconv-normalization-{celltype}-{microbe}-{tax_level}-{method}-plot.png")
 
 

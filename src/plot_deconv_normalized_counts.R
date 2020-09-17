@@ -1,19 +1,16 @@
-library(dplyr)
 library(scater)
 library(scran)
 library(ggplot2)
 
-
 counts <- read.table(snakemake@input[[1]], sep="\t", header=TRUE, row.names=1)
 # counts <- read.table("output/Pt0_genus_PathSeq_microbe_reads.tsv", sep="\t", header=TRUE, row.names=1)
 pdata <- read.table(snakemake@input[[2]], sep="\t", header = TRUE, row.names=1)
-# pdata <- read.table("output/Pt0_genus_PathSeq_metadata.tsv", sep="\t", header = TRUE, row.names=1)
 row.names(pdata) <- gsub("-", ".", row.names(pdata))
-celltype.col <- snakemake@wildcards[["celltype"]]
-celltype.of.interest <- snakemake@wildcards[["celltype_of_interest"]]
-agg <- aggregate(row.names(pdata), by=list(pdata[[celltype.col]]), FUN=length)
+# pdata <- read.table("output/Pt0_PathSeq_metadata.tsv", sep="\t", header = TRUE, row.names=1)
 # filter out any celltypes with < 5 cells
-celltypes.to.keep <- agg[agg$x >= 5,]$Group.1
+celltype.col <- snakemake@wildcards[["celltype"]]
+agg <- aggregate(row.names(pdata), by=list(pdata[[celltype.col]]), FUN=length)
+celltypes.to.keep <- agg[agg$x >= 2,]$Group.1
 pdata <- pdata[pdata[[celltype.col]] %in% celltypes.to.keep, ]
 # filter out unknown celltypes
 pdata <- pdata[pdata[[celltype.col]] != "unknown", ]
@@ -24,23 +21,15 @@ counts <- counts[, row.names(pdata)]
 min.reads <- 2
 min.cells <- min(agg$x)*.7
 counts <- counts[rowSums(counts > min.reads) > min.cells,]
+# pdata <- pdata[pdata["selection"] == "Astrocytes(HEPACAM)", ]
+#pdata <- pdata[pdata["depletion_batch"] != "depleted_yes", ]
+celltype <- pdata[[celltype.col]]
 sce <- SingleCellExperiment(assays = list(counts = as.matrix(counts)), colData=pdata)
-# get the cell-type for each cell
-celltype <- sce[[celltype.col]]
-# compute the normalization factor by clustering cells from the same cell-type together
 sce <- computeSumFactors(sce, clusters=celltype, positive=TRUE)
 sce <- logNormCounts(sce)
-# Further filter OTUs so we are only comparing highly expressed OTUs to reduce FDR penalty
-sce <- sce[rowSums(logcounts(sce) > 2) > min.cells, ]
-groups <- celltype
-lfc <- 1
-pval.type <- snakemake@wildcards[["pvaltype"]]
-block <- pdata$plate
-# calculate markers using t-test
-t <- findMarkers(sce, groups=groups, lfc=lfc, pval.type=pval.type, block=block)
-df <- t[[celltype.of.interest]]
-write.table(df, file=snakemake@output[[1]], sep="\t")
-# calculate markers using Wilcoxon-rank sum test
-wilcox <- findMarkers(sce, test="wilcox", groups=groups, lfc=lfc, pval.type=pval.type, block=block)
-df <- wilcox[[celltype.of.interest]]
-write.table(df, file=snakemake@output[[2]], sep="\t")
+
+plotExpression(sce, x=snakemake@wildcards[["celltype"]],
+    features=snakemake@wildcards[["microbe"]]) +
+    theme(axis.text.x = element_text(angle = 90))
+
+ggsave(snakemake@output[[1]])
