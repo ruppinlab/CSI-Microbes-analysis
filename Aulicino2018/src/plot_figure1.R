@@ -46,10 +46,10 @@ plot_fig1 <- data.frame(
     logcounts = sce_logcounts[feature, ],
     status = sce$infected)
 
-fig.1a <- ggplot(plot_fig1, aes(x=status, y=logcounts)) + 
+fig.1a <- ggplot(plot_fig1, aes(x=status, y=logcounts)) +
   geom_violin(scale="width") +
-  geom_sina(aes(x = status, 
-                y = logcounts, 
+  geom_sina(aes(x = status,
+                y = logcounts,
                 fill = status),
             alpha=0.6,
             size = 2,
@@ -73,10 +73,10 @@ df <- df[order(df$AUC.uninfected, decreasing=FALSE), ]
 df$Genera <- factor(df$Genera, levels=df$Genera)
 
 # Try to plot
-fig.1b <- ggplot(data=df, aes(x=Genera, y=AUC.uninfected)) + 
+fig.1b <- ggplot(data=df, aes(x=Genera, y=AUC.uninfected)) +
   geom_bar(stat="identity") +
   geom_text(data=df, aes(
-    x=Genera, 
+    x=Genera,
     y=AUC.uninfected-0.2,
     label=paste("FDR pval =", round(FDR, digits = 3) , sep="")),
     colour="white") +

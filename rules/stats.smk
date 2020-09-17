@@ -1,8 +1,8 @@
 
 
-PATIENT_RANKSUM_RESULT_FILE = join("output", "ranksum_{patient}_{tax_level}_{celltype}.tsv")
-PATIENT_HYPERGEOM_RESULT_FILE = join("output", "hypergeometric_{patient}_{tax_level}_{celltype}.tsv")
-PATIENT_BATCH_RANKSUM_RESULT_FILE = join("output", "ranksum_{patient}_{batch}_{tax_level}_{celltype}.tsv")
+# PATIENT_RANKSUM_RESULT_FILE = join("output", "ranksum_{patient}_{tax_level}_{celltype}.tsv")
+# PATIENT_HYPERGEOM_RESULT_FILE = join("output", "hypergeometric_{patient}_{tax_level}_{celltype}.tsv")
+# PATIENT_BATCH_RANKSUM_RESULT_FILE = join("output", "ranksum_{patient}_{batch}_{tax_level}_{celltype}.tsv")
 #RANKSUM_RESULT_FILE = join("output", "{tax_level}_ranksum_result-{celltype}.tsv")
 #PATIENT_RANKSUM_CONTAMINANT_PLOT = join("output", "{tax_level}_ranksum_contaminants_{patient}-{celltype}_plot.png")
 

@@ -1,5 +1,6 @@
 wildcard_constraints:
-    tax_level="root|superkingdom|phylum|class|order|family|genus|species|no_rank"
+    tax_level="root|superkingdom|phylum|class|order|family|genus|species|strain|no_rank",
+    kingdom="Bacteria|Archaea|Viruses|Fungi|Eukaryota"
 
 
 SAMPLES_FILE = join("data", "samples.tsv")
@@ -12,17 +13,17 @@ POORE2020_SUPP_TABLE = join("..", "data", "Poore2020_SuppTables.xlsx")
 STAR_READCOUNT_TABLE = join("output", "star-readcounts.tsv")
 
 # intermediate files
-MICROBE_READ_TABLE = join("output", "{tax_level}_{method}_microbe_reads.tsv")
-MICROBE_CPM_TABLE = join("output", "{tax_level}_{method}_microbe_cpm.tsv")
-SAMPLE_METADATA = join("output", "{tax_level}_{method}_sample_metadata.tsv")
+MICROBE_READ_TABLE = join("output", "{tax_level}_{method}_{kingdom}_reads.tsv")
+#MICROBE_CPM_TABLE = join("output", "{tax_level}_{method}_microbe_cpm.tsv")
+SAMPLE_METADATA = join("output", "{tax_level}_{method}_{kingdom}_metadata.tsv")
 
 
 # patient-specific intermediate files
-PATIENT_MICROBE_READ_TABLE = join("output", "{patient}_{tax_level}_{method}_microbe_reads.tsv")
-PATIENT_SAMPLE_METADATA = join("output", "{patient}_{tax_level}_{method}_metadata.tsv")
+PATIENT_MICROBE_READ_TABLE = join("output", "{patient}_{tax_level}_{method}_{kingdom}_reads.tsv")
+PATIENT_SAMPLE_METADATA = join("output", "{patient}_{tax_level}_{method}_{kingdom}_metadata.tsv")
 #PATIENT_BATCH_MICROBE_READ_TABLE = join("output", "{patient}_{tax_level}_microbe_{batch}_reads.tsv")
 #PATIENT_BATCH_SAMPLE_METADATA = join("output", "{patient}_{tax_level}_{batch}_metadata.tsv")
-PATIENT_MICROBE_CPM_TABLE = join("output", "{patient}_{tax_level}_{method}_microbe_cpm.tsv")
+#PATIENT_MICROBE_CPM_TABLE = join("output", "{patient}_{tax_level}_{method}_microbe_cpm.tsv")
 #PATIENT_BATCH_MICROBE_CPM_TABLE = join("output", "{patient}_{tax_level}_{batch}_cpm.tsv")
 # output files
 

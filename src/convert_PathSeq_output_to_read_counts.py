@@ -6,6 +6,7 @@ samples = pd.read_csv(snakemake.input[1], sep="\t")
 samples = samples.merge(patients, on="patient").drop_duplicates()
 samples.set_index("sample", inplace=True)
 tax_level = snakemake.wildcards["tax_level"]
+kingdom = snakemake.wildcards["kingdom"]
 output = []
 # samples = samples.iloc[0:100]
 for _, sample in samples.iterrows():
@@ -14,6 +15,7 @@ for _, sample in samples.iterrows():
         pathseq_df = pd.read_csv(filename, sep="\t")
         pathseq_df["sample"] = sample.name
         pathseq_df = pathseq_df.loc[pathseq_df["type"] == tax_level]
+        pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
         pathseq_df = pathseq_df.drop(columns=["tax_id", "taxonomy", "type", "kingdom", "score", "score_normalized", "reads", "reference_length"])
         if pathseq_df.empty:
             pathseq_df = pd.DataFrame(data={"sample": [sample.name], "name": ["placeholder"], "unambiguous": [0]})

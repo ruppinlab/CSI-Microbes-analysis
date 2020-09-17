@@ -1,0 +1,78 @@
+from os.path import join
+
+wildcard_constraints:
+    tax_level="root|superkingdom|phylum|class|order|family|genus|species|no_rank",
+    patient="2586-4|9245-3",
+    celltype="Tumor|celltype1|celltype2"
+
+include: "../rules/common.smk"
+
+
+PATIENT_BATCH_MICROBE_READ_TABLE = join("output", "{patient}_{batch}_{tax_level}_{method}_{kingdom}_reads.tsv")
+PATIENT_BATCH_SAMPLE_METADATA = join("output", "{patient}_{batch}_{tax_level}_{method}_{kingdom}_metadata.tsv")
+PATIENT_BINOM_MARKERS = join("output", "binomial-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{pvaltype}.tsv")
+PATIENT_BATCH_BINOM_MARKERS = join("output", "binomial-{patient}-{batch}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{pvaltype}.tsv")
+
+
+rule all:
+    input:
+        expand(PATIENT_BATCH_BINOM_MARKERS, patient=["2586-4"], celltype="Tumor",
+               celltype_of_interest="Tumor", tax_level=["species"],
+               batch=["PreRxTumor", "Day615Tumor"], kingdom="Viruses",
+               method="PathSeq", pvaltype="all"),
+        expand(PATIENT_BINOM_MARKERS, patient=["2586-4"], celltype="Tumor",
+               celltype_of_interest="Tumor", tax_level=["species"],
+               kingdom="Viruses", method="PathSeq", pvaltype="all"),
+        expand(PATIENT_BATCH_BINOM_MARKERS, patient=["9245-3"], celltype="Tumor",
+               celltype_of_interest="Tumor", tax_level=["species"],
+               batch="RelapseD565Tumor", kingdom="Viruses",
+               method="PathSeq", pvaltype="all"),
+
+rule calculate_batch_markers:
+    wildcard_constraints:
+        norm="deconv"
+    input:
+        PATIENT_BATCH_MICROBE_READ_TABLE,
+        PATIENT_BATCH_SAMPLE_METADATA
+    output:
+        PATIENT_BATCH_BINOM_MARKERS
+    script:
+        "../src/run_scran_binomial_marker_analysis.R"
+
+rule calculate_patient_markers:
+    input:
+        PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    output:
+        PATIENT_BINOM_MARKERS
+    script:
+        "../src/run_scran_binomial_marker_analysis.R"
+
+rule filter_patient_read_table_by_batch:
+    input:
+        PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    output:
+        PATIENT_BATCH_MICROBE_READ_TABLE,
+        PATIENT_BATCH_SAMPLE_METADATA
+    script:
+        "../src/split_read_matrices_by_batch.py"
+
+rule convert_PathSeq_to_readcounts:
+    wildcard_constraints:
+        method="PathSeq"
+    params:
+        join("data", "PathSeq", "{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv"
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "../src/convert_scPathSeq_output_to_read_counts.py"
+
+
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Paulson2018/output/ data/
