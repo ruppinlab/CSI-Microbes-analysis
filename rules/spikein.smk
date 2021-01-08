@@ -1,91 +1,115 @@
 
-ALL_MICROBE_SPIKEIN_CORR_FILE = join("output", "all-samples-{method}-{tax_level}-microbe-spikein-correlation.tsv")
-PATIENT_MICROBE_SPIKEIN_CORR_FILE = join("output", "{patient}-{method}-{tax_level}-{celltype}-microbe-spikein-correlation.tsv")
-ALL_SAMPLE_MICROBE_SPIKEIN_SCATTER = join("output", "all-samples-{method}-{tax_level}-{microbe}-spikein-scatterplot.png")
 
+PATIENT_SPIKE_NORM_PLOT = join("output", "plots", "{patient}", "spike-normalization-{celltype}-{microbe}-{tax_level}-{kingdom}-{method}-plot.png")
+SAMPLE_SPIKE_NORM_PLOT = join("output", "plots", "{patient}", "{sample}", "spike-normalization-{celltype}-{microbe}-{tax_level}-{kingdom}-{method}-plot.png")
+PLATE_SPIKE_NORM_PLOT = join("output", "plots", "{patient}", "{sample}", "{plate}", "spike-normalization-{celltype}-{microbe}-{tax_level}-{kingdom}-{method}-plot.png")
 
-rule calculate_markers_using_spikeins:
+PATIENT_SPIKEIN_READCOUNT = join("output", "star", "{patient}", "spike_ins.csv")
+PATIENT_HUMAN_READCOUNT = join("output", "star", "{patient}", "human_genes.csv")
+SAMPLE_SPIKEIN_READCOUNT = join("output", "star", "{patient}-{sample}", "spike_ins.csv")
+SAMPLE_HUMAN_READCOUNT = join("output", "star", "{patient}-{sample}", "human_genes.csv")
+PLATE_SPIKEIN_READCOUNT = join("output", "star", "{patient}-{sample}-{plate}", "spike_ins.csv")
+PLATE_HUMAN_READCOUNT = join("output", "star", "{patient}-{sample}-{plate}", "human_genes.csv")
+
+rule split_patient_readcount:
+    params:
+        spike=SPIKE_PREFIX
+    input:
+        PATIENT_STARsolo_READCOUNT,
+    output:
+        PATIENT_SPIKEIN_READCOUNT,
+        PATIENT_HUMAN_READCOUNT
+    script:
+        "../src/split_readcount.py"
+
+rule split_sample_readcount:
+    params:
+        spike=SPIKE_PREFIX
+    input:
+        SAMPLE_STARsolo_READCOUNT,
+    output:
+        SAMPLE_SPIKEIN_READCOUNT,
+        SAMPLE_HUMAN_READCOUNT
+    script:
+        "../src/split_readcount.py"
+
+rule split_plate_readcount:
+    params:
+        spike=SPIKE_PREFIX
+    input:
+        PLATE_STARsolo_READCOUNT,
+    output:
+        PLATE_SPIKEIN_READCOUNT,
+        PLATE_HUMAN_READCOUNT
+    script:
+        "../src/split_readcount.py"
+
+rule calculate_patient_markers_using_spikeins:
     wildcard_constraints:
         norm="spike"
     params:
-        spike=SPIKE_PREFIX
+        spike_functions="../src/spike_normalization_functions.R"
     input:
         PATIENT_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA,
-        STAR_READCOUNT_TABLE
+        PATIENT_SPIKEIN_READCOUNT,
+        PATIENT_SAMPLE_METADATA
     output:
-        TTEST_MARKERS,
-        WILCOX_MARKERS
+        PATIENT_TTEST_MARKERS,
+        PATIENT_WILCOX_MARKERS,
     script:
         "../src/run_scran_spikein_marker_analysis.R"
 
-rule plot_spike_normalization:
+rule calculate_sample_markers_using_spikeins:
+    wildcard_constraints:
+        norm="spike"
     params:
-        spike=SPIKE_PREFIX
+        spike_functions="../src/spike_normalization_functions.R"
+    input:
+        SAMPLE_MICROBE_READ_TABLE,
+        SAMPLE_SPIKEIN_READCOUNT,
+        SAMPLE_SAMPLE_METADATA
+    output:
+        SAMPLE_TTEST_MARKERS,
+        SAMPLE_WILCOX_MARKERS,
+    script:
+        "../src/run_scran_spikein_marker_analysis.R"
+
+# rules to plot using spike-in normalization
+rule plot_spike_normalization_patient:
+    params:
+        spike_functions="../src/spike_normalization_functions.R"
     input:
         PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SPIKEIN_READCOUNT,
         PATIENT_SAMPLE_METADATA,
-        STAR_READCOUNT_TABLE
+        PATHSEQ_TAXID_MAP
     output:
-        SPIKE_NORM_PLOT
+        PATIENT_SPIKE_NORM_PLOT
     script:
-        "../src/plot_spike_normalized_counts.R"
+        "../src/plot_spikein_normalized_counts.R"
 
-rule plot_normalization_approaches:
+rule plot_spike_normalization_sample:
     params:
-        spike=SPIKE_PREFIX
+        spike_functions="../src/spike_normalization_functions.R"
     input:
-        PATIENT_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA,
-        STAR_READCOUNT_TABLE
+        SAMPLE_MICROBE_READ_TABLE,
+        SAMPLE_SPIKEIN_READCOUNT,
+        SAMPLE_SAMPLE_METADATA,
+        PATHSEQ_TAXID_MAP
     output:
-        NORM_COMP_PLOT
+        SAMPLE_SPIKE_NORM_PLOT
     script:
-        "../src/plot_normalization_approaches.R"
+        "../src/plot_spikein_normalized_counts.R"
 
-rule scatterplot_microbe_spikein_all_samples:
+rule plot_spike_normalization_plate:
     params:
-        spike=SPIKE_PREFIX
+        spike_functions="../src/spike_normalization_functions.R"
     input:
-        STAR_READCOUNT_TABLE,
-        MICROBE_READ_TABLE,
-        SAMPLE_METADATA
+        PLATE_MICROBE_READ_TABLE,
+        PLATE_SPIKEIN_READCOUNT,
+        PLATE_SAMPLE_METADATA,
+        PATHSEQ_TAXID_MAP
     output:
-        ALL_SAMPLE_MICROBE_SPIKEIN_SCATTER
+        PLATE_SPIKE_NORM_PLOT
     script:
-        "../src/scatterplot_spikein_microbe.py"
-
-rule calculate_microbe_spikein_correlation_patient:
-    params:
-        spike=SPIKE_PREFIX
-    input:
-        STAR_READCOUNT_TABLE,
-        PATIENT_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA
-    output:
-        PATIENT_MICROBE_SPIKEIN_CORR_FILE
-    script:
-        "../src/correlate_microbe_spikein_patient.py"
-
-rule calculate_microbe_spikein_correlation_across_all_samples:
-    params:
-        spike=SPIKE_PREFIX
-    input:
-        STAR_READCOUNT_TABLE,
-        MICROBE_READ_TABLE
-    output:
-        ALL_MICROBE_SPIKEIN_CORR_FILE
-    script:
-        "../src/identify_microbes_correlated_spike_ins.py"
-
-# rule run_edgeR_spike_in_normalization:
-#     params:
-#         spike=SPIKE_PREFIX
-#     input:
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_SAMPLE_METADATA,
-#         STAR_READCOUNT_TABLE
-#     output:
-#         EDGER_SPIKE_RESULTS
-#     script:
-#         "../src/run_edgeR_human_spikein.R"
+        "../src/plot_spikein_normalized_counts.R"
