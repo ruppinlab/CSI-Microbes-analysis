@@ -1,5 +1,5 @@
 
-ruleorder: calculate_sample_binomial_markers > calculate_patient_binomial_markers
+#ruleorder: calculate_sample_binomial_markers > calculate_patient_binomial_markers
 
 
 CLASS_PATIENT_WILCOX_MARKERS = PATIENT_WILCOX_MARKERS.format(tax_level="class", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")

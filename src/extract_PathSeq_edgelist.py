@@ -67,11 +67,11 @@ for _, cell in cells.iterrows():
             pathseq_df = pathseq_df.loc[pathseq_df["taxonomy"].str.startswith("root|Viruses")]
         else:
             pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
-        # pathseq_df = pathseq_df.loc[pathseq_df.unambiguous > 0]
-        pathseq_df["parent"] = pathseq_df.apply(get_parent, axis=1)
-        edgelist = pathseq_df[["parent", "tax_id"]]
-        edgelist = edgelist.rename(columns={"tax_id": "child"})
-        output.append(edgelist)
+        output.append(pathseq_df)
+        # pathseq_df["parent"] = pathseq_df.apply(get_parent, axis=1)
+        # edgelist = pathseq_df[["parent", "tax_id"]]
+        # edgelist = edgelist.rename(columns={"tax_id": "child"})
+        # output.append(edgelist)
 
     except OSError as err:
         print("OS error: {0}".format(err))
@@ -82,7 +82,11 @@ for _, cell in cells.iterrows():
         print("Unexpected error:", sys.exc_info()[0])
         raise
 
-df = pd.concat(output)
+pathseq_df = pd.concat(output)
+pathseq_df = pathseq_df[["type", "taxonomy", "name", "tax_id"]].drop_duplicates()
+pathseq_df["parent"] = pathseq_df.apply(get_parent, axis=1)
+edgelist = pathseq_df[["parent", "tax_id"]]
+df = edgelist.rename(columns={"tax_id": "child"})
 df = df.drop_duplicates()
 df = df.loc[~df.isna().any(axis=1)]
 df = df.astype({"parent": int})
