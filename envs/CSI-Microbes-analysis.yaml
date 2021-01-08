@@ -4,7 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bioconductor-scran
+  - bioconductor-scran=1.16.0
   - bioconductor-scater
   - bioconductor-singlecellexperiment
   - pandas
@@ -13,3 +13,6 @@ dependencies:
   - r-ggpubr
   - r-ggforce
   - snakemake
+  - anytree
+  - r-structssi
+  - rpy2
