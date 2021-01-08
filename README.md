@@ -7,28 +7,33 @@ conda env create -f envs/CSI-Microbes.yaml
 conda activate CSI-Microbes
 ```
 
-## Generating Figure 1
+## Generating Aulicino2018 Results
 
-First, you will need the PathSeq output files for Aulicino2018, which should go in `Aulicino2018/data/PathSeq`. For analyses using spike-in normalization, you will need to STAR readcount files, which should go in `Aulicino2018/data/STAR`.
+First, you will need the download the STAR and PathSeq files for Aulicino2018 and then you can run snakemake.
 
 ```
 cd Aulicino2018
-snakemake --cores 1 plot_fig1
+
+rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Aulicino2018/output/ data/
+rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Aulicino2018/output/ data/
+rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Aulicino2018/output/ data/
+rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Aulicino2018/output/ data/
+
+snakemake --cores 2 all
 ```
 
-## Generating Figure 2A
+## Generating Maynard2020 Results
 
-You will need the PathSeq output files for Chung2017.
-
-```
-cd Chung2017
-snakemake --cores 1 plot_figure2a
-```
-
-## Generating Figure 2C
+First, you will need the download the STAR and PathSeq files for Maynard2020 (which can take a while) and then you can run snakemake.
 
 ```
-cd Jerby-Arnon2018
-rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Jerby-Arnon2018/identify-microbes-workflow/output/ data/
-snakemake --cores 1 plot_figure2c
+cd Maynard2020
+
+rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Maynard2020/output/ data/
+
+rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Maynard2020/output/ data/
+rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Maynard2020/output/ data/
+rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Maynard2020/output/ data/
+
+snakemake --cores 1 all
 ```

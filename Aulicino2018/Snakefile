@@ -130,9 +130,6 @@ rule calculate_markers_spikein_plate_test:
     script:
         "src/run_scran_marker_analysis_spikein_plate.R"
 
-# rsync -avc --include='*read_counts.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Aulicino2018/output/ data/
-
-# rsync -avc --include='filter-metrics.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Aulicino2018/identify-microbes-workflow/output/ data/
 
 # rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Aulicino2018/output/ data/
 
