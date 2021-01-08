@@ -15,8 +15,8 @@ wildcard_constraints:
 SPIKE_PREFIX = "ERCC-"
 include: "../rules/STARsolo.smk"
 include: "../rules/common.smk"
-include: "../rules/stats.smk"
 include: "../rules/spikein.smk"
+include: "../rules/stats.smk"
 #include: "../rules/plotting.smk"
 #include: "../rules/nreads_sample_size_analysis.smk"
 plates = ["P1", "P2", "P3", "P4"]
