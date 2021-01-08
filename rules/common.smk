@@ -22,6 +22,19 @@ PLATE_SAMPLE_METADATA = join("output", "{patient}", "{sample}_{plate}_{tax_level
 PATHSEQ_EDGELIST_FILE = join("output", "{patient}", "edgelist_{kingdom}_{method}.tsv")
 PATHSEQ_TAXID_MAP = join("output", "{patient}", "tax_id_map_{kingdom}_{method}.tsv")
 
+rule convert_PathSeq_to_read_counts:
+    wildcard_constraints:
+        method="PathSeq"
+    params:
+        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv",
+    output:
+        PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA,
+    script:
+        "../src/convert_PathSeq_output_to_read_counts.py"
+
 rule extract_PathSeq_edgelist:
     params:
         join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
