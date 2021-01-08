@@ -3,7 +3,7 @@
 ## Setting up the environment
 
 ```
-conda env create -f envs/CSI-Microbes.yaml
+conda env create -f envs/CSI-Microbes-analysis.yaml
 conda activate CSI-Microbes
 ```
 
