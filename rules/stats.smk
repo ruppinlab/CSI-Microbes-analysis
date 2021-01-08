@@ -1,98 +1,63 @@
 
+ruleorder: calculate_sample_binomial_markers > calculate_patient_binomial_markers
 
-# PATIENT_RANKSUM_RESULT_FILE = join("output", "ranksum_{patient}_{tax_level}_{celltype}.tsv")
-# PATIENT_HYPERGEOM_RESULT_FILE = join("output", "hypergeometric_{patient}_{tax_level}_{celltype}.tsv")
-# PATIENT_BATCH_RANKSUM_RESULT_FILE = join("output", "ranksum_{patient}_{batch}_{tax_level}_{celltype}.tsv")
-#RANKSUM_RESULT_FILE = join("output", "{tax_level}_ranksum_result-{celltype}.tsv")
-#PATIENT_RANKSUM_CONTAMINANT_PLOT = join("output", "{tax_level}_ranksum_contaminants_{patient}-{celltype}_plot.png")
 
-rule calculate_markers:
-    wildcard_constraints:
-        norm="deconv"
+CLASS_PATIENT_WILCOX_MARKERS = PATIENT_WILCOX_MARKERS.format(tax_level="class", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+ORDER_PATIENT_WILCOX_MARKERS = PATIENT_WILCOX_MARKERS.format(tax_level="order", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+FAMILY_PATIENT_WILCOX_MARKERS = PATIENT_WILCOX_MARKERS.format(tax_level="family", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+GENUS_PATIENT_WILCOX_MARKERS = PATIENT_WILCOX_MARKERS.format(tax_level="genus", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+SPECIES_PATIENT_WILCOX_MARKERS = PATIENT_WILCOX_MARKERS.format(tax_level="species", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+
+CLASS_SAMPLE_WILCOX_MARKERS = SAMPLE_WILCOX_MARKERS.format(tax_level="class", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+ORDER_SAMPLE_WILCOX_MARKERS = SAMPLE_WILCOX_MARKERS.format(tax_level="order", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+FAMILY_SAMPLE_WILCOX_MARKERS = SAMPLE_WILCOX_MARKERS.format(tax_level="family", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+GENUS_SAMPLE_WILCOX_MARKERS = SAMPLE_WILCOX_MARKERS.format(tax_level="genus", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+SPECIES_SAMPLE_WILCOX_MARKERS = SAMPLE_WILCOX_MARKERS.format(tax_level="species", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", lfc="{lfc}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+
+
+PATIENT_hFDR_WILCOX_MARKERS = join("output", "results", "{patient}",
+                               "hFDR-wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
+
+SAMPLE_hFDR_WILCOX_MARKERS = join("output", "results", "{patient}", "{sample}",
+                               "hFDR-wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
+
+
+
+
+# rule calculate_sample_binomial_markers:
+#     input:
+#         SAMPLE_MICROBE_READ_TABLE,
+#         SAMPLE_SAMPLE_METADATA
+#     output:
+#         SAMPLE_BINOM_MARKERS,
+#     script:
+#         "../src/run_scran_binomial_marker_analysis.R"
+
+
+rule adjust_hFRD_patient:
     input:
-        PATIENT_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA
+        edgelist = PATHSEQ_EDGELIST_FILE,
+        tax_id_map = PATHSEQ_TAXID_MAP,
+        class_markers = CLASS_PATIENT_WILCOX_MARKERS,
+        order_markers = ORDER_PATIENT_WILCOX_MARKERS,
+        family_markers = FAMILY_PATIENT_WILCOX_MARKERS,
+        genus_markers = GENUS_PATIENT_WILCOX_MARKERS,
+        species_markers = SPECIES_PATIENT_WILCOX_MARKERS,
     output:
-        TTEST_MARKERS,
-        WILCOX_MARKERS
+        PATIENT_hFDR_WILCOX_MARKERS
     script:
-        "../src/run_scran_marker_analysis.R"
+        "../src/run_hFDR.py"
 
-# rules for running edgeR
-# rule run_edgeR_DE:
-#     input:
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_SAMPLE_METADATA,
-#     output:
-#         EDGER_RESULTS
-#     script:
-#         "../src/run_edgeR_analysis.R"
-#
-# # rules for statistical analyses
-# rule compute_wilcoxon_rank_sum_patient_species:
-#     wildcard_constraints:
-#         tax_level="species"
-#     input:
-#         PATIENT_MICROBE_CPM_TABLE,
-#         PATIENT_SAMPLE_METADATA
-#     output:
-#         PATIENT_RANKSUM_RESULT_FILE
-#     script:
-#         "../src/compute_wilcoxon_rank_sum_test.py"
-#
-# rule compute_wilcoxon_rank_sum_patient_genus:
-#     wildcard_constraints:
-#         tax_level="genus"
-#     input:
-#         PATIENT_MICROBE_CPM_TABLE,
-#         PATIENT_SAMPLE_METADATA,
-#         CONTAMINANTS_FILE
-#     output:
-#         PATIENT_RANKSUM_RESULT_FILE
-#     script:
-#         "../src/compute_wilcoxon_rank_sum_test_contamination.py"
-
-# rule compute_wilcoxon_rank_sum_patient_batch_genus:
-#     wildcard_constraints:
-#         tax_level="genus"
-#     input:
-#         PATIENT_BATCH_MICROBE_CPM_TABLE,
-#         PATIENT_BATCH_SAMPLE_METADATA,
-#         CONTAMINANTS_FILE
-#     output:
-#         PATIENT_BATCH_RANKSUM_RESULT_FILE
-#     script:
-#         "../src/compute_wilcoxon_rank_sum_test_contamination.py"
-
-# hypergeometric enrichment test rules
-
-# rule compute_hypergeom_patient_genus:
-#     wildcard_constraints:
-#         tax_level="genus"
-#     input:
-#         PATIENT_MICROBE_CPM_TABLE,
-#         PATIENT_SAMPLE_METADATA,
-#         CONTAMINANTS_FILE
-#     output:
-#         PATIENT_HYPERGEOM_RESULT_FILE
-#     script:
-#         "../src/compute_hypergeometric_test_contamination.py"
-#
-# rule compute_hypergeom_patient_species:
-#     wildcard_constraints:
-#         tax_level="species"
-#     input:
-#         PATIENT_MICROBE_CPM_TABLE,
-#         PATIENT_SAMPLE_METADATA,
-#         CONTAMINANTS_FILE
-#     output:
-#         PATIENT_HYPERGEOM_RESULT_FILE
-#     script:
-#         "../src/compute_hypergeometric_test.py"
-# rule compute_contaminant_rank_sum_test:
-#     input:
-#         PATIENT_RANKSUM_RESULT_FILE
-#     output:
-#         PATIENT_RANKSUM_CONTAMINANT_PLOT
-#     script:
-#         "../src/plot_rank_sum_contaminants.py"
+rule adjust_hFRD_sample:
+    input:
+        edgelist = PATHSEQ_EDGELIST_FILE,
+        tax_id_map = PATHSEQ_TAXID_MAP,
+        class_markers = CLASS_SAMPLE_WILCOX_MARKERS,
+        order_markers = ORDER_SAMPLE_WILCOX_MARKERS,
+        family_markers = FAMILY_SAMPLE_WILCOX_MARKERS,
+        genus_markers = GENUS_SAMPLE_WILCOX_MARKERS,
+        species_markers = SPECIES_SAMPLE_WILCOX_MARKERS,
+    output:
+        SAMPLE_hFDR_WILCOX_MARKERS
+    script:
+        "../src/run_hFDR.py"
