@@ -1,98 +1,63 @@
 wildcard_constraints:
-    tax_level="root|superkingdom|phylum|class|order|family|genus|species|strain|no_rank",
-    kingdom="Bacteria|Archaea|Viruses|Fungi|Eukaryota"
-
-
-SAMPLES_FILE = join("data", "samples.tsv")
-#ruleorder: convert_patient_to_CPM > convert_patient_batch_to_CPM
-# contamination files
-CONTAMINANTS_FILE = join("output", "contaminants.tsv")
-POORE2020_SUPP_TABLE = join("..", "data", "Poore2020_SuppTables.xlsx")
-
-# read count file
-STAR_READCOUNT_TABLE = join("output", "star-readcounts.tsv")
+    tax_level="root|superkingdom|kingdom|phylum|class|order|family|genus|species|strain|no_rank",
+    kingdom="Bacteria|Archaea|Viruses|Fungi|Eukaryota",
+    celltype="Tumor|celltype1|celltype2|celltype3|infected|infection|status|plate|Monocyte|MF.Monocytes|Epithelial",
+    method="PathSeq"
 
 # intermediate files
 MICROBE_READ_TABLE = join("output", "{tax_level}_{method}_{kingdom}_reads.tsv")
-#MICROBE_CPM_TABLE = join("output", "{tax_level}_{method}_microbe_cpm.tsv")
 SAMPLE_METADATA = join("output", "{tax_level}_{method}_{kingdom}_metadata.tsv")
 
 
 # patient-specific intermediate files
-PATIENT_MICROBE_READ_TABLE = join("output", "{patient}_{tax_level}_{method}_{kingdom}_reads.tsv")
-PATIENT_SAMPLE_METADATA = join("output", "{patient}_{tax_level}_{method}_{kingdom}_metadata.tsv")
-#PATIENT_BATCH_MICROBE_READ_TABLE = join("output", "{patient}_{tax_level}_microbe_{batch}_reads.tsv")
-#PATIENT_BATCH_SAMPLE_METADATA = join("output", "{patient}_{tax_level}_{batch}_metadata.tsv")
-#PATIENT_MICROBE_CPM_TABLE = join("output", "{patient}_{tax_level}_{method}_microbe_cpm.tsv")
-#PATIENT_BATCH_MICROBE_CPM_TABLE = join("output", "{patient}_{tax_level}_{batch}_cpm.tsv")
-# output files
+PATIENT_MICROBE_READ_TABLE = join("output", "{patient}", "{tax_level}_{method}_{kingdom}_reads.tsv")
+PATIENT_SAMPLE_METADATA = join("output", "{patient}", "{tax_level}_{method}_{kingdom}_metadata.tsv")
 
-# TOP_MICROBES_FILE = join("output", "{tax_level}_microbes_ranked.tsv")
+SAMPLE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}_{tax_level}_{method}_{kingdom}_reads.tsv")
+SAMPLE_SAMPLE_METADATA = join("output", "{patient}", "{sample}_{tax_level}_{method}_{kingdom}_metadata.tsv")
 
-# rule convert_Kraken_to_counts:
-#     wildcard_constraints:
-#         tax_level="genus",
-#         method="Kraken"
-#     input:
-#         SAMPLES_FILE,
-#         #paired=expand(KRAKEN_PAIRED_BIOM, zip, patient=samples["patient"], sample=samples["sample"]),
-#         #unpaired=expand(KRAKEN_UNPAIRED_BIOM, zip, patient=samples["patient"], sample=samples["sample"]),
-#     output:
-#         MICROBE_READ_TABLE,
-#         SAMPLE_METADATA
-#     script:
-#         "../src/convert_Kraken_to_counts.py"
-#
-# # rules for contaminants
-# rule clean_contaminants_file:
-#     input:
-#         POORE2020_SUPP_TABLE
-#     output:
-#         CONTAMINANTS_FILE
-#     script:
-#         "../src/clean_contaminants.py"
+PLATE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}_{plate}_{tax_level}_{method}_{kingdom}_reads.tsv")
+PLATE_SAMPLE_METADATA = join("output", "{patient}", "{sample}_{plate}_{tax_level}_{method}_{kingdom}_metadata.tsv")
 
-# rules for processing data
-rule filter_read_table_by_patient:
+PATHSEQ_EDGELIST_FILE = join("output", "{patient}", "edgelist_{kingdom}_{method}.tsv")
+PATHSEQ_TAXID_MAP = join("output", "{patient}", "tax_id_map_{kingdom}_{method}.tsv")
+
+rule extract_PathSeq_edgelist:
+    params:
+        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
     input:
-        MICROBE_READ_TABLE,
-        SAMPLE_METADATA
+        "data/units.tsv"
     output:
+        PATHSEQ_EDGELIST_FILE
+    script:
+        "../src/extract_PathSeq_edgelist.py"
+
+rule extract_name_tax_id_mapping:
+    params:
+        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv"
+    output:
+        PATHSEQ_TAXID_MAP
+    script:
+        "../src/extract_PathSeq_name_tax_id.py"
+
+rule split_sample_metadata_by_plate:
+    input:
+        SAMPLE_MICROBE_READ_TABLE,
+        SAMPLE_SAMPLE_METADATA
+    output:
+        PLATE_MICROBE_READ_TABLE,
+        PLATE_SAMPLE_METADATA
+    script:
+        "../src/split_read_matrices_by_plate.py"
+
+rule split_patient_metadata_by_sample:
+    input:
         PATIENT_MICROBE_READ_TABLE,
         PATIENT_SAMPLE_METADATA
+    output:
+        SAMPLE_MICROBE_READ_TABLE,
+        SAMPLE_SAMPLE_METADATA
     script:
-        "../src/split_read_matrices_by_patient.py"
-
-# rule filter_patient_read_table_by_batch:
-#     input:
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_SAMPLE_METADATA
-#     output:
-#         PATIENT_BATCH_MICROBE_READ_TABLE,
-#         PATIENT_BATCH_SAMPLE_METADATA
-#     script:
-#         "../src/split_read_matrices_by_batch.py"
-
-# rule convert_patient_batch_to_CPM:
-#     input:
-#         PATIENT_BATCH_MICROBE_READ_TABLE
-#     output:
-#         PATIENT_BATCH_MICROBE_CPM_TABLE
-#     script:
-#         "../src/convert_to_CPM.py"
-
-# rule convert_patient_to_CPM:
-#     input:
-#         PATIENT_MICROBE_READ_TABLE
-#     output:
-#         PATIENT_MICROBE_CPM_TABLE
-#     script:
-#         "../src/convert_to_CPM.py"
-#
-# rule convert_to_CPM:
-#     input:
-#         MICROBE_READ_TABLE
-#     output:
-#         MICROBE_CPM_TABLE
-#     script:
-#         "../src/convert_to_CPM.py"
+        "../src/split_read_matrices_by_sample.py"
