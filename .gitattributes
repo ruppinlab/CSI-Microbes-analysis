@@ -1,2 +1,5 @@
 Aulicino2018/data/PathSeq/*/pathseq.txt filter=lfs diff=lfs merge=lfs -text
+Aulicino2018/data/star/**/barcodes.tsv.gz filter=lfs diff=lfs merge=lfs -text
+Aulicino2018/data/star/**/features.tsv.gz filter=lfs diff=lfs merge=lfs -text
+Aulicino2018/data/star/**/matrix.mtx.gz filter=lfs diff=lfs merge=lfs -text
 . !text !filter !merge !diff
