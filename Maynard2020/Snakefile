@@ -29,8 +29,8 @@ wildcard_constraints:
 SPIKE_PREFIX = "ERCC-"
 include: "../rules/STARsolo.smk"
 include: "../rules/common.smk"
-include: "../rules/stats.smk"
 include: "../rules/spikein.smk"
+include: "../rules/stats.smk"
 #include: "../rules/plotting.smk"
 #include: "../rules/sample_size_analysis.smk"
 
@@ -45,47 +45,46 @@ FIGURE4 = join("output", "plots", "figure4.jpg")
 # patients with multiple samples - TH248 and LT_S69 and LT_S74; TH226 and LT_S52 and LT_S57; TH179 and LT_S58 and LT_S79
 rule all:
     input:
-        "output/plots/leptotrichia_plot.jpg",
         FIGURE4,
-        expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-               patient=units.patient.unique(), celltype=["Epithelial"], lfc=[".5"],
-               celltype_of_interest="Epithelial", celltype_comparison=["nonEpithelial"],
-               norm="spike", pvaltype="any", block="plate"),
-        expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-               patient=patients_with_stroma_cells, celltype=["celltype1"], lfc=["0.5"],
-               celltype_of_interest="Tumor", celltype_comparison=["stroma"],
-               norm="spike", pvaltype="any", block="plate"),
-        expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-               patient=patients_with_epithelial_cells, celltype=["celltype1"], lfc=["0.5"],
-               celltype_of_interest="Tumor", celltype_comparison=["epithelial"],
-               norm="spike", pvaltype="any", block="plate"),
-        expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-               patient=units.patient.unique(), celltype=["Tumor"], lfc=["0.5"],
-               celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-               norm="spike", pvaltype="any", block="plate"),
-        expand(SAMPLE_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-               patient=["TH248"], sample=["LT_S69", "LT_S74"],
-               celltype=["celltype1"], lfc=["1"],
-               celltype_of_interest="Tumor", celltype_comparison=["immune"],
-               norm="spike", pvaltype="any", block="plate"),
-        expand(SAMPLE_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-               patient=["TH226"], sample=["LT_S52", "LT_S57"],
-               celltype=["celltype1"], lfc=["0.5"],
-               celltype_of_interest="Tumor", celltype_comparison="immune",
-               norm="spike", pvaltype="any", block="plate"),
-        expand(SAMPLE_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-               patient=["TH179"], sample=["LT_S58", "LT_S79"],
-               celltype=["celltype1"], lfc=["0.5"],
-               celltype_of_interest="Tumor", celltype_comparison="immune",
-               norm="spike", pvaltype="any", block="plate"),
-        expand(PATIENT_SPIKE_NORM_PLOT, kingdom=["Bacteria"], method="PathSeq",
-               patient=["TH171", "TH231", "TH236", "TH238", "TH266"],
-               celltype=["celltype1"], tax_level="species", microbe=["Cutibacterium_acnes"]),
+        # expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
+        #        patient=units.patient.unique(), celltype=["Epithelial"], lfc=[".5"],
+        #        celltype_of_interest="Epithelial", celltype_comparison=["nonEpithelial"],
+        #        norm="spike", pvaltype="any", block="plate"),
+        # expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
+        #        patient=patients_with_stroma_cells, celltype=["celltype1"], lfc=["0.5"],
+        #        celltype_of_interest="Tumor", celltype_comparison=["stroma"],
+        #        norm="spike", pvaltype="any", block="plate"),
+        # expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
+        #        patient=patients_with_epithelial_cells, celltype=["celltype1"], lfc=["0.5"],
+        #        celltype_of_interest="Tumor", celltype_comparison=["epithelial"],
+        #        norm="spike", pvaltype="any", block="plate"),
+        # expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
+        #        patient=units.patient.unique(), celltype=["Tumor"], lfc=["0.5"],
+        #        celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+        #        norm="spike", pvaltype="any", block="plate"),
+        # expand(SAMPLE_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
+        #        patient=["TH248"], sample=["LT_S69", "LT_S74"],
+        #        celltype=["celltype1"], lfc=["1"],
+        #        celltype_of_interest="Tumor", celltype_comparison=["immune"],
+        #        norm="spike", pvaltype="any", block="plate"),
+        # expand(SAMPLE_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
+        #        patient=["TH226"], sample=["LT_S52", "LT_S57"],
+        #        celltype=["celltype1"], lfc=["0.5"],
+        #        celltype_of_interest="Tumor", celltype_comparison="immune",
+        #        norm="spike", pvaltype="any", block="plate"),
+        # expand(SAMPLE_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
+        #        patient=["TH179"], sample=["LT_S58", "LT_S79"],
+        #        celltype=["celltype1"], lfc=["0.5"],
+        #        celltype_of_interest="Tumor", celltype_comparison="immune",
+        #        norm="spike", pvaltype="any", block="plate"),
+        # expand(PATIENT_SPIKE_NORM_PLOT, kingdom=["Bacteria"], method="PathSeq",
+        #        patient=["TH171", "TH231", "TH236", "TH238", "TH266"],
+               # celltype=["celltype1"], tax_level="species", microbe=["Cutibacterium_acnes"]),
         # expand(PATIENT_SPIKE_NORM_PLOT, kingdom=["Bacteria"], method="PathSeq", patient=["TH231"],
         #        celltype=["celltype1"], tax_level="species", microbe=["Gardnerella_vaginalis"]),
-        expand(PLATE_SPIKE_NORM_PLOT, kingdom=["Bacteria"], method="PathSeq", patient=["TH231"],
-               sample="LT_S56", plate=['B003116', 'B003119', 'B003120', 'B003112'],
-               celltype=["celltype1"], tax_level="genus", microbe=["Leptotrichia"]),
+        # expand(PLATE_SPIKE_NORM_PLOT, kingdom=["Bacteria"], method="PathSeq", patient=["TH231"],
+        #        sample="LT_S56", plate=['B003116', 'B003119', 'B003120', 'B003112'],
+        #        celltype=["celltype1"], tax_level="genus", microbe=["Leptotrichia"]),
         # expand(PLATE_SPIKE_NORM_PLOT, kingdom=["Bacteria"], method="PathSeq",
         #        patient=["TH220"], sample=["LT_S47"], plate=['B000861', 'B000862', 'B000860', 'B000863'],
         #        celltype=["celltype3"], tax_level="class", microbe=["Alphaproteobacteria", "Actinobacteria"]),
@@ -185,19 +184,19 @@ rule filter_by_Straussman:
 
 
 
-
-rule convert_PathSeq_to_read_counts:
-    wildcard_constraints:
-        method="PathSeq"
-    params:
-        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
-    input:
-        "data/units.tsv",
-    output:
-        PATIENT_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA
-    script:
-        "../src/convert_PathSeq_output_to_read_counts.py"
+# 
+# rule convert_PathSeq_to_read_counts:
+#     wildcard_constraints:
+#         method="PathSeq"
+#     params:
+#         join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+#     input:
+#         "data/units.tsv",
+#     output:
+#         PATIENT_MICROBE_READ_TABLE,
+#         PATIENT_SAMPLE_METADATA
+#     script:
+#         "../src/convert_PathSeq_output_to_read_counts.py"
 
 
 # rule combine_filter_metrics:
