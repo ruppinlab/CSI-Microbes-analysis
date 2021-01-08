@@ -122,34 +122,22 @@ rule plot_figure4:
     script:
         "src/plot_figure4.R"
 
-rule pretty_plot:
-    params:
-        spike_functions="../src/spike_normalization_functions.R"
-    input:
-        PLATE_MICROBE_READ_TABLE.format(kingdom="Bacteria", method="PathSeq",
-               patient="TH231",  sample="LT_S56", plate="B003119", tax_level="genus"),
-        PLATE_SPIKEIN_READCOUNT.format(patient="TH231", sample="LT_S56", plate="B003119"),
-        PLATE_SAMPLE_METADATA.format(kingdom="Bacteria", method="PathSeq",
-               patient="TH231", sample="LT_S56", plate="B003119", tax_level="genus"),
-        PATHSEQ_TAXID_MAP.format(kingdom="Bacteria", method="PathSeq",
-               patient="TH231"),
-    output:
-        "output/plots/leptotrichia_plot.jpg"
-    script:
-        "src/pretty_plot.R"
-
-# rule extract_significant_results:
+# rule pretty_plot:
+#     params:
+#         spike_functions="../src/spike_normalization_functions.R"
 #     input:
-#         expand(PATIENT_WILCOX_MARKERS, tax_level=["superkingdom", "phylum", "class", "order", "family", "genus", "species"],
-#                kingdom="{kingdom}",
-#                method="{method}", patient="{patient}", celltype="{celltype}",
-#                lfc="{lfc}", celltype_of_interest="{celltype_of_interest}",
-#                celltype_comparison="{celltype_comparison}",
-#                norm="{norm}", pvaltype="{pvaltype}", block="{block}")
+#         PLATE_MICROBE_READ_TABLE.format(kingdom="Bacteria", method="PathSeq",
+#                patient="TH231",  sample="LT_S56", plate="B003119", tax_level="genus"),
+#         PLATE_SPIKEIN_READCOUNT.format(patient="TH231", sample="LT_S56", plate="B003119"),
+#         PLATE_SAMPLE_METADATA.format(kingdom="Bacteria", method="PathSeq",
+#                patient="TH231", sample="LT_S56", plate="B003119", tax_level="genus"),
+#         PATHSEQ_TAXID_MAP.format(kingdom="Bacteria", method="PathSeq",
+#                patient="TH231"),
 #     output:
-#         PATIENT_SIG_WILCOX_RESULTS
+#         "output/plots/leptotrichia_plot.jpg"
 #     script:
-#         "src/extract_significant_results.py"
+#         "src/pretty_plot.R"
+
 
 rule calculate_patient_binomial_markers_filtered:
     input:
@@ -182,34 +170,6 @@ rule filter_by_Straussman:
     script:
         "../src/filter_by_Straussman_hits.py"
 
-
-
-# 
-# rule convert_PathSeq_to_read_counts:
-#     wildcard_constraints:
-#         method="PathSeq"
-#     params:
-#         join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
-#     input:
-#         "data/units.tsv",
-#     output:
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_SAMPLE_METADATA
-#     script:
-#         "../src/convert_PathSeq_output_to_read_counts.py"
-
-
-# rule combine_filter_metrics:
-#     input:
-#         "data/samples.tsv",
-#     output:
-#         COMBINED_FILTER_METRICS
-#     script:
-#         "../src/combine_filter_metrics.py"
-#
-# rule download_filter_metrics:
-#     shell:
-#         "rsync -avc --include='filter-metrics.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Chung2017/identify-microbes-workflow/output/PathSeq/ filter-metrics/"
 
 # rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Maynard2020/output/ data/
 
