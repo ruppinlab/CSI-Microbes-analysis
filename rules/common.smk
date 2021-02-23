@@ -8,11 +8,11 @@ wildcard_constraints:
 PATIENT_MICROBE_READ_TABLE = join("output", "{patient}", "{tax_level}_{method}_{kingdom}_reads.tsv")
 PATIENT_SAMPLE_METADATA = join("output", "{patient}", "{tax_level}_{method}_{kingdom}_metadata.tsv")
 
-SAMPLE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}_{tax_level}_{method}_{kingdom}_reads.tsv")
-SAMPLE_SAMPLE_METADATA = join("output", "{patient}", "{sample}_{tax_level}_{method}_{kingdom}_metadata.tsv")
+SAMPLE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}", "{tax_level}_{method}_{kingdom}_reads.tsv")
+SAMPLE_SAMPLE_METADATA = join("output", "{patient}", "{sample}", "{tax_level}_{method}_{kingdom}_metadata.tsv")
 
-PLATE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}_{plate}_{tax_level}_{method}_{kingdom}_reads.tsv")
-PLATE_SAMPLE_METADATA = join("output", "{patient}", "{sample}_{plate}_{tax_level}_{method}_{kingdom}_metadata.tsv")
+PLATE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}", "{plate}", "{tax_level}_{method}_{kingdom}_reads.tsv")
+PLATE_SAMPLE_METADATA = join("output", "{patient}", "{sample}", "{plate}", "{tax_level}_{method}_{kingdom}_metadata.tsv")
 
 PATHSEQ_EDGELIST_FILE = join("output", "{patient}", "edgelist_{kingdom}_{method}.tsv")
 PATHSEQ_TAXID_MAP = join("output", "{patient}", "tax_id_map_{kingdom}_{method}.tsv")

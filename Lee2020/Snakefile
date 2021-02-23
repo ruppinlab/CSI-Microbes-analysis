@@ -1,87 +1,61 @@
 from os.path import join
+import pandas as pd
+
+cells = pd.read_csv("data/units.tsv", sep="\t")
+
 
 wildcard_constraints:
-    tax_level="root|superkingdom|phylum|class|order|family|genus|species|no_rank",
     celltype="Tumor|celltype1",
-    patient="SC028",
-    batch="Sample6[a-c]"
+    patient="|".join(cells["patient"].unique())
 
 include: "../rules/common.smk"
+include: "../rules/analysis-10x.smk"
 
 
 
-PATIENT_BATCH_MICROBE_READ_TABLE = join("output", "{patient}_{batch}_{tax_level}_{method}_{kingdom}_reads.tsv")
-PATIENT_BATCH_SAMPLE_METADATA = join("output", "{patient}_{batch}_{tax_level}_{method}_{kingdom}_metadata.tsv")
-PATIENT_BINOM_MARKERS = join("output", "binomial-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{pvaltype}.tsv")
-PATIENT_BATCH_BINOM_MARKERS = join("output", "binomial-{patient}-{batch}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{pvaltype}.tsv")
+patients = cells["patient"].unique()
+samples = cells[["patient", "sample"]].drop_duplicates()
+tumor_samples = ["Sample{}a".format(x) for x in range(1,10)]
+samples = samples.loc[samples["sample"].isin(tumor_samples)]
 
 # exclude "SC001" for now - no tumors cells processed
 rule all:
     input:
-        expand(PATIENT_BATCH_BINOM_MARKERS, patient="SC028", batch="Sample6a",
-               celltype="celltype1", celltype_of_interest="Epithelial cells",
-               method="PathSeq", tax_level="genus", pvaltype="any", kingdom="Bacteria"),
-        expand(PATIENT_BATCH_BINOM_MARKERS, patient="SC028", batch="Sample6a",
-               celltype="Tumor", celltype_of_interest="Tumor",
-               method="PathSeq", tax_level="genus", pvaltype="any", kingdom="Bacteria")
+        expand(PATIENT_BINOM_MARKERS, patient=patients,
+               celltype="Tumor", celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+               tax_level=["class", "order", "family", "genus", "species"],
+               lfc=0, block="sample", direction=["up", "down"], minprop="0.01",
+               method="PathSeq", pvaltype="any", kingdom=["All"]),
+        expand(SAMPLE_BINOM_MARKERS, zip, patient=samples["patient"], sample=samples["sample"],
+               celltype=["Tumor"]*samples.shape[0], celltype_of_interest=["Tumor"]*samples.shape[0],
+               celltype_comparison=["nonTumor"]*samples.shape[0],
+               tax_level=["genus"]*samples.shape[0],
+               lfc=[0]*samples.shape[0], block=["sample"]*samples.shape[0],
+               method=["PathSeq"]*samples.shape[0], pvaltype=["any"]*samples.shape[0],
+               kingdom=["All"]*samples.shape[0], direction=["up"]*samples.shape[0],
+               minprop=["0.01"]*samples.shape[0]),
+        # expand(SAMPLE_BINOM_MARKERS, patient="SC028", sample="Sample6a",
+        #        celltype="celltype1", celltype_of_interest="Tumor", celltype_comparison="Immune",
+        #        tax_level=["class", "order", "family", "genus", "species"],
+        #        lfc=0, block="sample",
+        #        method="PathSeq", pvaltype="any", kingdom=["Viruses", "Bacteria"]),
 
-rule calculate_batch_markers:
-    wildcard_constraints:
-        norm="deconv"
+
+rule plot_figures:
     input:
-        PATIENT_BATCH_MICROBE_READ_TABLE,
-        PATIENT_BATCH_SAMPLE_METADATA
-    output:
-        PATIENT_BATCH_BINOM_MARKERS
-    script:
-        "../src/run_scran_binomial_marker_analysis.R"
+        expand(SAMPLE_BINOM_PLOT, patient=["SC019"], sample="Sample2a", celltype="Tumor",
+               celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+               tax_level=["species"], block="sample", kingdom="Bacteria", lfc=0,
+               method="PathSeq", pvaltype="all", microbe_of_interest="Hathewaya_histolytica"),
+        expand(SAMPLE_BINOM_PLOT, patient=["SC028"], sample="Sample6a", celltype="Tumor",
+               celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+               tax_level=["class"], block="sample", kingdom="Bacteria", lfc=0,
+               method="PathSeq", pvaltype="all", microbe_of_interest="Fusobacteriia"),
 
-rule calculate_patient_markers:
-    wildcard_constraints:
-        norm="deconv"
-    input:
-        PATIENT_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA
-    output:
-        PATIENT_BINOM_MARKERS
-    script:
-        "../src/run_scran_binomial_marker_analysis.R"
 
-rule filter_patient_read_table_by_batch:
-    input:
-        PATIENT_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA
-    output:
-        PATIENT_BATCH_MICROBE_READ_TABLE,
-        PATIENT_BATCH_SAMPLE_METADATA
-    script:
-        "../src/split_read_matrices_by_batch.py"
 
-rule convert_PathSeq_to_readcounts:
-    wildcard_constraints:
-        method="PathSeq"
-    params:
-        join("data", "PathSeq", "{}-{}-{}", "pathseq.txt")
-    input:
-        "data/units.tsv"
-    output:
-        MICROBE_READ_TABLE,
-        SAMPLE_METADATA
-    script:
-        "../src/convert_scPathSeq_output_to_read_counts.py"
 
-# rule PathSeq_barcode_readcounts:
-#     wildcard_constraints:
-#         method="PathSeq"
-#     params:
-#         join("data", "PathSeq", "SC028-Sample6a", "{}-scores.txt")
-#     input:
-#         "data/PathSeq/SC028-Sample6a/barcodes.tsv"
-#     output:
-#         join("output", "{tax_level}_{method}_microbe_reads_Sample6a_barcodes.tsv")
-#     script:
-#         "src/convert_barcode_PathSeq_output_to_read_counts.py"
 
-# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Lee2020/output/ data/
-# rsync -avc --include='*-scores.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Lee2020/output/ data/
-# rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Lee2020/ data/
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lee2020/output/ data/
+# rsync -avc --include='*-scores.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lee2020/output/ data/
+# rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lee2020/ data/
