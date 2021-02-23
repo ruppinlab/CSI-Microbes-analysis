@@ -4,28 +4,26 @@ PATIENT_SPIKE_NORM_PLOT = join("output", "plots", "{patient}", "spike-normalizat
 SAMPLE_SPIKE_NORM_PLOT = join("output", "plots", "{patient}", "{sample}", "spike-normalization-{celltype}-{microbe}-{tax_level}-{kingdom}-{method}-plot.png")
 PLATE_SPIKE_NORM_PLOT = join("output", "plots", "{patient}", "{sample}", "{plate}", "spike-normalization-{celltype}-{microbe}-{tax_level}-{kingdom}-{method}-plot.png")
 
-PATIENT_SPIKEIN_READCOUNT = join("output", "star", "{patient}", "spike_ins.csv")
-PATIENT_HUMAN_READCOUNT = join("output", "star", "{patient}", "human_genes.csv")
-SAMPLE_SPIKEIN_READCOUNT = join("output", "star", "{patient}-{sample}", "spike_ins.csv")
-SAMPLE_HUMAN_READCOUNT = join("output", "star", "{patient}-{sample}", "human_genes.csv")
-PLATE_SPIKEIN_READCOUNT = join("output", "star", "{patient}-{sample}-{plate}", "spike_ins.csv")
-PLATE_HUMAN_READCOUNT = join("output", "star", "{patient}-{sample}-{plate}", "human_genes.csv")
+PATIENT_SPIKEIN_READCOUNT = join("output", "star", "{patient}", "spike_ins.tsv")
+PATIENT_HUMAN_READCOUNT = join("output", "star", "{patient}", "human_genes.tsv")
+SAMPLE_SPIKEIN_READCOUNT = join("output", "star", "{patient}-{sample}", "spike_ins.tsv")
+SAMPLE_HUMAN_READCOUNT = join("output", "star", "{patient}-{sample}", "human_genes.tsv")
+PLATE_SPIKEIN_READCOUNT = join("output", "star", "{patient}-{sample}-{plate}", "spike_ins.tsv")
+PLATE_HUMAN_READCOUNT = join("output", "star", "{patient}-{sample}-{plate}", "human_genes.tsv")
 
-TTEST_MARKERS = join("output", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}={tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-WILCOX_MARKERS = join("output", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-BINOM_MARKERS = join("output", "binomial-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
+TTEST_MARKERS = join("output", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}={tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
+WILCOX_MARKERS = join("output", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 
-PATIENT_TTEST_MARKERS = join("output", "{patient}", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-PATIENT_WILCOX_MARKERS = join("output", "{patient}", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-PATIENT_BINOM_MARKERS = join("output", "{patient}", "binomial-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
+PATIENT_TTEST_MARKERS = join("output", "{patient}", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
+PATIENT_WILCOX_MARKERS = join("output", "{patient}", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 
-SAMPLE_TTEST_MARKERS = join("output", "{patient}", "{sample}", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-SAMPLE_WILCOX_MARKERS = join("output", "{patient}", "{sample}", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-SAMPLE_BINOM_MARKERS = join("output", "{patient}", "{sample}", "binomial-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
+SAMPLE_TTEST_MARKERS = join("output", "{patient}", "{sample}", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
+SAMPLE_WILCOX_MARKERS = join("output", "{patient}", "{sample}", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 
-PLATE_TTEST_MARKERS = join("output", "{patient}", "{sample}", "{plate}", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-PLATE_WILCOX_MARKERS = join("output", "{patient}", "{sample}", "{plate}", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
+PLATE_TTEST_MARKERS = join("output", "{patient}", "{sample}", "{plate}", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
+PLATE_WILCOX_MARKERS = join("output", "{patient}", "{sample}", "{plate}", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 
+PATIENT_WILCOX_MARKERS_TAXA_NAME = join("output", "{patient}", "wilcox-taxa-names-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 
 rule split_patient_readcount:
     params:
@@ -129,3 +127,12 @@ rule plot_spike_normalization_plate:
         PLATE_SPIKE_NORM_PLOT
     script:
         "../src/plot_spikein_normalized_counts.R"
+
+rule convert_taxid_to_name:
+    input:
+        PATIENT_WILCOX_MARKERS,
+        PATHSEQ_TAXID_MAP
+    output:
+        PATIENT_WILCOX_MARKERS_TAXA_NAME
+    script:
+        "../src/convert_taxid_to_taxa_name.R"

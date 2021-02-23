@@ -1,18 +1,20 @@
-name: CSI-Microbes
+name: CSI-Microbes-env
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
+  - anytree
   - bioconductor-scran=1.16.0
   - bioconductor-scater
   - bioconductor-singlecellexperiment
+  - bioconductor-fgsea
   - pandas
   - r-ggplot2
   - r-dplyr
   - r-ggpubr
   - r-ggforce
-  - snakemake
-  - anytree
+  - r-seurat
   - r-structssi
+  - snakemake
   - rpy2
