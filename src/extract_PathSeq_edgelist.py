@@ -63,10 +63,11 @@ for _, cell in cells.iterrows():
         # for some reason, some species are called "species_group"
         # pathseq_df = pathseq_df.replace({"type": {"species_group": "species"}})
         pathseq_df = pathseq_df.loc[pathseq_df["type"].isin(["superkingdom", "phylum", "class", "order", "family", "genus", "species"])]
-        if kingdom == "Viruses":
-            pathseq_df = pathseq_df.loc[pathseq_df["taxonomy"].str.startswith("root|Viruses")]
-        else:
-            pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
+        if kingdom != "All":
+            if kingdom == "Viruses":
+                pathseq_df = pathseq_df.loc[pathseq_df["taxonomy"].str.startswith("root|Viruses")]
+            else:
+                pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
         output.append(pathseq_df)
         # pathseq_df["parent"] = pathseq_df.apply(get_parent, axis=1)
         # edgelist = pathseq_df[["parent", "tax_id"]]

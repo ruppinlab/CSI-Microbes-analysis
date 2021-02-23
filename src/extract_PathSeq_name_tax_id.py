@@ -17,10 +17,11 @@ for _, cell in cells.iterrows():
         pathseq_df = pd.read_csv(filename, sep="\t")
         pathseq_df["sample"] = cell.name
         pathseq_df = pathseq_df.loc[pathseq_df["type"].isin(["superkingdom", "phylum", "class", "order", "family", "genus", "species"])]
-        if kingdom == "Viruses":
-            pathseq_df = pathseq_df.loc[pathseq_df["taxonomy"].str.startswith("root|Viruses")]
-        else:
-            pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
+        if kingdom != "All":
+            if kingdom == "Viruses":
+                pathseq_df = pathseq_df.loc[pathseq_df["taxonomy"].str.startswith("root|Viruses")]
+            else:
+                pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
         # get tax_id instead of name
         output.append(pathseq_df[["name", "tax_id", "type"]])
     except OSError as err:

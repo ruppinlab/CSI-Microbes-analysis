@@ -10,65 +10,87 @@ counts <- read.table(snakemake@input[[1]], sep="\t", header=TRUE, row.names=1)
 pdata <- read.table(snakemake@input[[2]], sep="\t", header = TRUE, row.names=1)
 row.names(pdata) <- gsub("-", ".", row.names(pdata))
 # pdata <- read.table("output/Pt0_genus_PathSeq_metadata.tsv", sep="\t", header = TRUE, row.names=1)
-# filter out any celltypes with < 5 cells in a given batch
+
 celltype.col <- snakemake@wildcards[["celltype"]]
 celltype.of.interest <- snakemake@wildcards[["celltype_of_interest"]]
-l = vector("list", length(unique(pdata$batch)))
-i <- 1
-for (batch in unique(pdata$batch)){
-  batch_pdata = pdata[pdata$batch == batch,]
-  agg <- aggregate(row.names(batch_pdata), by=list(batch_pdata[[celltype.col]]), FUN=length)
-  celltypes.to.keep <- agg[agg$x >= 5,]$Group.1
-  l[[i]] <- batch_pdata[batch_pdata[[celltype.col]] %in% celltypes.to.keep, ]
-  i=i+1
+celltype.comparison <- snakemake@wildcards[["celltype_comparison"]]
+print(dim(counts))
+print(class(counts))
+# if there are no reads, then write empty data.frame
+if (nrow(counts) == 0){
+  print("There are no reads at all. Writing empty data.frame")
+  df <- data.frame(Top=character(), p.value=double(), FDR=double(), summary.logFC=double())
+  if (celltype.comparison != "all"){
+    n <- paste0("LogFC.", celltype.comparison)
+    df[n] = double()
+  } else {
+    cols <- setdiff(unique(pdata[[celltype.col]]), celltype.of.interest)
+    for (c in cols)
+    {
+      n <- paste0("LogFC.", c)
+      df[n] <- double()
+    }
+  }
+  write.table(df, file=snakemake@output[[1]], sep="\t")
+  quit()
 }
-pdata <- do.call(rbind, l)
-pdata <- droplevels(pdata)
-counts <- counts[, row.names(pdata)]
-#pdata <- pdata[pdata[[celltype.col]] %in% celltypes.to.keep, ]
-# filter out unknown celltypes
-# pdata <- pdata[pdata[[celltype.col]] != "unknown", ]
-
-# filter out any OTUs without the minimum number of reads in .7 of the smallest group
-# before normalization -> reduce sparsity to manageable amount
-#min.reads <- 2
-#min.cells <- min(agg$x)*.7
-#counts <- counts[rowSums(counts > min.reads) > min.cells,]
-# pdata <- pdata[pdata["selection"] == "Astrocytes(HEPACAM)", ]
-#pdata <- pdata[pdata["depletion_batch"] != "depleted_yes", ]
 
 sce <- SingleCellExperiment(assays = list(counts = as.matrix(counts)), colData=pdata)
-#sce <- sce[, colSums(counts(sce)) > 0]
+
+# now subset the cells by celltypes of interest if applicable
+if (celltype.comparison != "all"){
+  sce <- sce[, sce[[celltype.col]] %in% c(celltype.of.interest, celltype.comparison)]
+}
+
+# set the minimum proportion of cells of any cell-type that must have at least one UMI
+min.proportion <- as.numeric(snakemake@wildcards[["minprop"]])
+
+# get the proportion of cells with count > 0 for all possible combinations of cell group and gene
+propOver0byGroup <- apply(
+  counts(sce),
+  1,
+  function(x){
+  tapply(x, sce[[celltype.col]], function(x){sum(x > 0) / length(x)})
+})
+
+if (length(unique(sce[[celltype.col]])) == 1){
+  propOver0byGroup <- t(as.matrix(propOver0byGroup))
+  rownames(propOver0byGroup) <- unique(sce[[celltype.col]])
+}
+
+propOver0byGroup <- reshape2::melt(
+  propOver0byGroup, varnames = c("group", "feature"), value.name = "Proportion")
+
+# boolean for whether the proportion is > 2%
+propOver0byGroup$PropOverXpct <- (propOver0byGroup$Proportion > min.proportion)
+
+# now we have a data.frame with four columns - group, feature, proportion and PropOver25pct
+
+groupsOverXpct <- as.data.frame(with(
+    propOver0byGroup,
+    tapply(PropOverXpct, feature, function(x){sum(x)}))
+)
+
+colnames(groupsOverXpct) <- "Groups"
+groupsOverXpct$feature <- rownames(groupsOverXpct)
+
+detectedFeatures <- names(which(tapply(
+  propOver0byGroup$Proportion, propOver0byGroup$feature,
+  function(x){sum(x > min.proportion) > 0})))
+
+keepEndogenous <- (rownames(sce) %in% detectedFeatures)
+sce <- sce[keepEndogenous]
+
+
 celltype <- sce[[celltype.col]]
-#print(sce$infected)
-# sce <- computeSumFactors(sce, clusters=celltype, positive=TRUE)
-# sce <- logNormCounts(sce)
-# filter so we are only comparing highly expressed OTUs to reduce FDR penalty
-sce <- sce[rowSums(counts(sce)) > 2, ]
 
 groups <- celltype
-lfc <- 0
+lfc <- as.numeric(snakemake@wildcards[["lfc"]])
 pval.type <- snakemake@wildcards[["pvaltype"]]
-block <- pdata$batch
-# t <- findMarkers(sce, groups=groups, lfc=lfc, pval.type=pval.type, block=block)
-# df <- t[[celltype.of.interest]]
-# write.table(df, file=snakemake@output[[1]], sep="\t")
-# wilcox <- findMarkers(sce, test="wilcox", groups=groups, lfc=lfc, pval.type=pval.type, block=block)
-# df <- wilcox[[celltype.of.interest]]
-# write.table(df, file=snakemake@output[[2]], sep="\t")
-binom <- findMarkers(sce, test="binom", groups=groups, pval.type=pval.type, block=block, assay.type="counts")
-# print(names(binom))
-for (celltype in names(binom)) {
-  print(celltype)
-  print(binom[[celltype]])
-}
+block <- sce[[snakemake@wildcards[["block"]]]]
+direction <- snakemake@wildcards[["direction"]]
+
+binom <- findMarkers(sce, test="binom", groups=groups, pval.type=pval.type, block=block, assay.type="counts", direction=direction)
+
 df <- binom[[celltype.of.interest]]
 write.table(df, file=snakemake@output[[1]], sep="\t")
-# combined <- multiMarkerStats(
-#     t=t,
-#     wilcox=wilcox,
-#     binom=binom
-# )
-#
-# df <- combined[[celltype.of.interest]]
-# write.table(df, file=snakemake@output[[1]], sep="\t")
