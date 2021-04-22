@@ -22,6 +22,7 @@ conda activate CSI-Microbes-env
 
 ## Software Dependencies
 
+TODO
 
 ## Reproducing results from Aulicino2018
 
@@ -86,25 +87,28 @@ rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robi
 ```
 
 
-Next, you can generate figure 3 () using the below command
+Next, you can generate figure 3 (`output/plots/figure_3A_1.pdf`, `output/plots/figure_3A_2.pdf`, `output/plots/figure_3B_1.pdf` and `output/plots/figure_3B_2.pdf`) using the below command
 
 ```
-snakemake --cores <number of CPUs> plot_figures
+snakemake --cores <number of CPUs> plot_figure3
 ```
 
-## Maynard2020 Figures
+## Reproducing results from Paulson2018
 
-To reproduce figure 4 and 5 from Maynard2020. To download these data files, you will need to be connected to the NIH network and have access to the `/data/Robinson-SB` directory and follow the below instructions
+## Reproducing results from Maynard2020
+
+To reproduce figure 4 and 5, you will need to download the PathSeq and STAR files using the below commands (within the Maynard2020 directory).
 
 ```
-cd Maynard2020
-rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ data/
-rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ data/
-rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ data/
-rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ data/
+rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
+rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
+rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
+rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
 ```
 
-Next, you can generate the figures using the below command
+# Reproducing Figure 4
+
+Next, you can generate figure 4  using the below command
 
 ```
 snakemake --cores <number of CPUs> plot_figures
