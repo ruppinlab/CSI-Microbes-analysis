@@ -1,10 +1,20 @@
 library(scater)
 library(scran)
+#library(EnhancedVolcano)
+
 
 source(snakemake@params[["spike_functions"]])
 
+# sce <- generate_sce(microbe.file="output/TH179/class_PathSeq_Bacteria_reads.tsv",
+# spikein.file="output/star/TH179/spike_ins.tsv", pdata.file="output/TH179/class_PathSeq_Bacteria_metadata.tsv", celltype.col="celltype1")
 sce <- generate_sce(microbe.file=snakemake@input[[1]], spikein.file=snakemake@input[[2]],
   pdata.file=snakemake@input[[3]], celltype.col=snakemake@wildcards[["celltype"]])
+
+tax.map <- read.table(snakemake@input[[4]], sep="\t", header=TRUE)
+# tax.map <- read.table("output/TH179/tax_id_map_Bacteria_PathSeq.tsv", sep="\t", header=TRUE)
+#species.tax.map <- tax.map[tax.map$taxa_level == snakemake@wildcards[["tax_level"]],]
+
+# rename rownames from tax_id to names
 
 celltype.col <- snakemake@wildcards[["celltype"]]
 celltype.of.interest <- snakemake@wildcards[["celltype_of_interest"]]
@@ -48,6 +58,7 @@ groupsOverXpct <- as.data.frame(with(
     propOverXbyGroup,
     tapply(PropOverXpct, feature, function(x){sum(x)}))
 )
+
 colnames(groupsOverXpct) <- "Groups"
 groupsOverXpct$feature <- rownames(groupsOverXpct)
 
@@ -75,8 +86,14 @@ direction <- snakemake@wildcards[["direction"]]
 # calculate markers using t-test
 t.test.markers <- findMarkers(sce, groups=groups, lfc=lfc, pval.type=pval.type, block=block, direction=direction)
 t.test.df <- t.test.markers[[celltype.of.interest]]
+t.test.df$taxa <- lapply(rownames(t.test.df), function(x) tax.map[tax.map$tax_id == x, "name"])
+
 write.table(t.test.df, file=snakemake@output[[1]], sep="\t")
 # calculate markers using wilcoxon rank sum test
 wilcox.markers <- findMarkers(sce, groups=groups, test="wilcox", lfc=lfc, pval.type=pval.type, block=block, direction=direction)
 wilcox.df <- wilcox.markers[[celltype.of.interest]]
+wilcox.df$taxa <- lapply(rownames(wilcox.df), function(x) tax.map[tax.map$tax_id == x, "name"])
 write.table(wilcox.df, file=snakemake@output[[2]], sep="\t")
+
+#EnhancedVolcano(t.test.df, lab=t.test.df$taxa, x = "summary.logFC", y = "p.value", FCcutoff = lfc, pCutoff = .05)
+#ggsave(snakemake@output[[3]])

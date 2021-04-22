@@ -16,7 +16,7 @@ hFDR = ro.r["hFDR.adjust"]
 def build_tree(node_name, el, pval_dict, auc_dict):
     pvalue = pval_dict.get(node_name)
     auc = auc_dict.get(node_name)
-    node = Node(node_name, pvalue=pvalue, auc=auc, removed_children=[])
+    node = Node(node_name, pvalue=pvalue, metric=auc, removed_children=[])
     children = el.loc[el.parent == node_name]
     child_nodes = []
     for index, child in children.iterrows():
@@ -27,11 +27,12 @@ def build_tree(node_name, el, pval_dict, auc_dict):
 # the function prunes nodes that were not evaluated due to low expression
 # in addition, it removes single child nodes
 def update_tree(node):
+    print(node)
     n_children = len(node.children)
     if n_children == 0:
         return node
     if n_children == 1:
-        print("removing {}".format(node.children[0].name))
+        #print("removing {}".format(node.children[0].name))
         child = update_tree(node.children[0])
         node.children = child.children
         # to do, add removed children as node attribute
@@ -76,7 +77,7 @@ def get_pvalues_from_tree(node):
 
 # this returns a dictionary of names to p-values from the tree
 def get_auc_dict_from_tree(node):
-    node_dict = {node.name: node.auc}
+    node_dict = {node.name: node.metric}
     for child in node.children:
         node_dict.update(get_auc_dict_from_tree(child))
     return node_dict
@@ -101,14 +102,14 @@ def run_hFDR_adjust(name, df, el):
     # build dictionary of p-values
     df.index = df.index.astype("str")
     pval_dict = df["p.value"].to_dict()
-    auc_dict = df["summary.AUC"].to_dict()
+    auc_dict = df["summary.{}".format(metric)].to_dict()
     # build tree
     tree = build_tree(str(name), el, pval_dict, auc_dict)
     tree = update_tree(tree)
     pvalues = get_pvalues_from_tree(tree)
     aucs = get_auc_dict_from_tree(tree)
     removed_children = get_removed_children_from_tree(tree)
-
+    print(pvalues)
     # construct R object to pass to hFDR.adjust
     vec = ro.FloatVector(pvalues.values())
     vec.names = ro.StrVector(pvalues.keys())
@@ -117,22 +118,41 @@ def run_hFDR_adjust(name, df, el):
     el = get_edgelist_from_tree(tree)
     l = el["parent"].tolist()
     l.extend(el["child"].tolist())
-    v = ro.StrVector(l)
-    m = ro.r['matrix'](v, ncol = 2)
-
-    out = hFDR(vec, m, alpha = 0.05)
-    adj_pvals = out.slots['p.vals']
-    with localconverter(ro.default_converter + pandas2ri.converter):
-        pd_from_r_df = ro.conversion.rpy2py(adj_pvals)
+    #print(tree)
+    #print(el)
+    #print(l)
+    if el.empty: # edge case where m is empty, which means this is a single node (not a tree)
+        print("edge case: l is empty")
+        if tree.pvalue < .001:
+            adjsig = "***"
+        elif tree.pvalue < .01:
+            adjsig = "**"
+        elif tree.pvalue < .05:
+            adjsig = "*"
+        else:
+            adjsig = "-"
+        pd_from_r_df = pd.DataFrame(index=[tree.name], data={"unadjp": tree.pvalue, "adjp": tree.pvalue, "adj.significance": adjsig})
+        #print(pd_from_r_df)
+    else:
+        v = ro.StrVector(l)
+        m = ro.r['matrix'](v, ncol = 2)
+        # this is where we call the R function hFDR
+        out = hFDR(vec, m, alpha = 0.05)
+        adj_pvals = out.slots['p.vals']
+        with localconverter(ro.default_converter + pandas2ri.converter):
+            pd_from_r_df = ro.conversion.rpy2py(adj_pvals)
     #print(pd.Series(data=aucs))
-    out = pd_from_r_df.merge(pd.Series(data=aucs).to_frame(name="AUC"), left_index=True, right_index=True)
+    #print("printing expected output")
+    #print(pd_from_r_df)
+    out = pd_from_r_df.merge(pd.Series(data=aucs).to_frame(name="metric"), left_index=True, right_index=True)
     # now add back in the removed children
     removed_children_list = []
     removed_children_list.append(out)
     for index, row in removed_children.iterrows():
-        print(row)
+        #print(row)
         parent_row = out.loc[row["parent"]]
-        new_df = pd.DataFrame(index=[str(row["child"])], columns=["unadjp", "adjp", "adj.significance", "AUC"], data=[[parent_row["unadjp"], parent_row["adjp"], parent_row["adj.significance"], parent_row["AUC"]]])
+        #print(parent_row)
+        new_df = pd.DataFrame(index=[str(row["child"])], columns=["unadjp", "adjp", "adj.significance", "metric"], data=[[parent_row["unadjp"], parent_row["adjp"], parent_row["adj.significance"], parent_row["metric"]]])
         removed_children_list.append(new_df)
     return pd.concat(removed_children_list)
 
@@ -140,32 +160,42 @@ def run_hFDR_adjust(name, df, el):
 el = pd.read_csv(snakemake.input["edgelist"], sep="\t", dtype={"parent": "str", "child": "str"})
 
 taxID_map_df = pd.read_csv(snakemake.input["tax_id_map"], sep="\t", dtype={"tax_id": "str"})
-#print(taxID_map_df)
-class_df = pd.read_csv(snakemake.input["class_markers"], sep="\t")
-order_df = pd.read_csv(snakemake.input["order_markers"], sep="\t")
-family_df = pd.read_csv(snakemake.input["family_markers"], sep="\t")
-genus_df = pd.read_csv(snakemake.input["genus_markers"], sep="\t")
-species_df = pd.read_csv(snakemake.input["species_markers"], sep="\t")
+# print(taxID_map_df)
+class_df = pd.read_csv(snakemake.input["class_markers"], sep="\t", index_col=0)
+order_df = pd.read_csv(snakemake.input["order_markers"], sep="\t", index_col=0)
+family_df = pd.read_csv(snakemake.input["family_markers"], sep="\t", index_col=0)
+genus_df = pd.read_csv(snakemake.input["genus_markers"], sep="\t", index_col=0)
+species_df = pd.read_csv(snakemake.input["species_markers"], sep="\t", index_col=0)
 
 df = pd.concat([class_df, order_df, family_df, genus_df, species_df])
+#print(df)
+metric = snakemake.params["metric"]
 
 output = []
 # loop through the class p-values and run hFDR if they have p-value < .05
 for index, class_row in class_df.iterrows():
+    #print(class_row.name)
     if class_row["p.value"] < .05:
         #print(class_row.name)
+        #print(df)
+        #print(el)
         out = run_hFDR_adjust(class_row.name, df, el)
-        print(out)
+        out = out.rename(columns={"metric": "summary.{}".format(metric)})
+        #print(out)
         output.append(out)
     else:
-        new_df = pd.DataFrame(index=[str(class_row.name)], columns=["unadjp", "adjp", "adj.significance", "AUC"], data=[[class_row["p.value"], class_row["p.value"], "_", class_row["summary.AUC"]]])
+        new_df = pd.DataFrame(index=[str(class_row.name)], columns=["unadjp", "adjp", "adj.significance", "summary.{}".format(metric)], data=[[class_row["p.value"], class_row["p.value"], "_", class_row["summary.{}".format(metric)]]])
+        #print(new_df)
         output.append(new_df)
 
 n_hypotheses = class_df.shape[0]
 df = pd.concat(output)
 df.adjp = df.adjp.apply(lambda x: min(1, x * n_hypotheses))
-print(df)
 df = df.merge(taxID_map_df, left_index=True, right_on="tax_id")
-df[["name", "taxa_level", "unadjp", "adjp", "AUC", "tax_id"]].sort_values(by=["adjp", "unadjp"]).to_csv(snakemake.output[0], sep="\t", index=False)
+if metric == "AUC":
+    df["summary.AUC"] = df["summary.AUC"].fillna(.5)
+else: # metric == "logFC"
+    df["summary.LogFC"] = df["summary.logFC"].fillna(0)
+df[["name", "taxa_level", "unadjp", "adjp", "summary.{}".format(metric), "tax_id"]].sort_values(by=["adjp", "unadjp"]).to_csv(snakemake.output[0], sep="\t", index=False)
 
 # DotExporter(tree).to_picture("output/plots/Actinobacteria_tree.png")

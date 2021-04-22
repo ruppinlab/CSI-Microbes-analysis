@@ -1,19 +1,17 @@
 import pandas as pd
 
 
-cells = pd.read_csv(snakemake.input[0], sep="\t")
-cells.set_index("cell", inplace=True)
+cells = pd.read_csv(snakemake.input[0], sep="\t", dtype={"patient": "str"})
 cells = cells.loc[cells.patient == snakemake.wildcards["patient"]]
-# samples = pd.read_csv(snakemake.input[1], sep="\t")
-# samples = samples.merge(patients, on="patient").drop_duplicates()
-# samples.set_index("sample", inplace=True)
-#tax_level = snakemake.wildcards["tax_level"]
+
 kingdom = snakemake.wildcards["kingdom"]
 output = []
-# samples = samples.iloc[0:100]
+print(cells)
+cells["cell"] = cells.apply(lambda x: "{}-{}".format(x["sample"], x["barcode"]), axis=1)
+
 for _, cell in cells.iterrows():
     try:
-        filename = snakemake.params[0].format(cell.patient, cell["sample"], cell.plate, cell.name)
+        filename = snakemake.params[0].format(cell["patient"], cell["sample"], cell["barcode"])
         pathseq_df = pd.read_csv(filename, sep="\t")
         pathseq_df["sample"] = cell.name
         pathseq_df = pathseq_df.loc[pathseq_df["type"].isin(["superkingdom", "phylum", "class", "order", "family", "genus", "species"])]

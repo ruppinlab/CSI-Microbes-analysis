@@ -8,47 +8,72 @@ wildcard_constraints:
 
 include: "../rules/common.smk"
 include: "../rules/analysis-10x.smk"
+include: "../rules/hFDR.smk"
 
 #BINOM_PLOT = join("output", "{patient}", "{sample}", "plots", "binomial-plot-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}-{microbe_of_interest}.jpg")
-FIG1D = join("output", "Pt0", "plots", "figure1d.jpg")
+FIGURE_S2 = join("output", "plots", "figure_S2.pdf")
+
+SAMPLE_BINOM_VOLCANO_ALL_TAXA = join("output", "volcano_plot_all_taxa.pdf")
+FIGURE_2B_1 = join("output", "plots", "figure_2B_1.pdf")
+FIGURE_2B_2 = join("output", "plots", "figure_2B_2.pdf")
+
+SRPRISM_READ_COUNT_FILE = join("raw", "SRPRISM", "{patient}", "{sample}", "CB-UMI-count-{genome}.tsv")
 
 rule all:
     input:
-        expand(SAMPLE_BINOM_MARKERS, patient="Pt0", sample="GSM3454529",
-               celltype="Monocyte", celltype_of_interest="Monocyte", celltype_comparison="nonMonocyte",
-               tax_level="genus", direction=["up", "down"], minprop="0.01",
-               lfc="0", block="sample",
-               method="PathSeq", pvaltype="any", kingdom="Bacteria"),
+        FIGURE_S2,
+        FIGURE_2B_1,
+        FIGURE_2B_2,
+        # expand(SAMPLE_FISHER_EXACT, patient="Pt0", sample=["GSM3454529"], tax_level=["class", "order", "family", "genus", "species"],
+        #        microbe_of_interest="Salmonella",
+        #        celltype="Monocyte", celltype_of_interest="Monocyte", celltype_comparison="nonMonocyte",
+        #        method="PathSeq", kingdom="Bacteria"),
+        # expand(FIGURE2B_extended, patient="Pt0", sample=["GSM3454529"], tax_level="genus",
+        #        microbe_of_interest="Salmonella",
+        #        celltype="Monocyte", celltype_of_interest="Monocyte", celltype_comparison="nonMonocyte",
+        #        method="PathSeq", kingdom="Bacteria"),
 
-rule plot_figures:
+
+rule plot_figure_2B:
     input:
-        FIG1D,
-        expand(SAMPLE_BINOM_PLOT, patient="Pt0", sample="GSM3454529",
-               celltype="Monocyte", celltype_of_interest="Monocyte", celltype_comparison="nonMonocyte",
-               tax_level="genus", direction=["up", "down"], minprop="0.01",
-               lfc="0", block="sample", microbe_of_interest="Salmonella",
-               method="PathSeq", pvaltype="any", kingdom="Bacteria"),
-#
-# rule plot_fig3c:
-#     params:
-#         title="Cells with UMIs mapped to Salmonella"
-#     input:
-#         SAMPLE_MICROBE_READ_TABLE,
-#         SAMPLE_SAMPLE_METADATA
-#     output:
-#         BINOM_PLOT
-#     script:
-#         "../src/plot_binomial_result.R"
+        FIGURE_2B_1,
+        FIGURE_2B_2,
 
-rule plot_fig1d:
+
+rule plot_figure_2B_1:
+    input:
+        expand(SAMPLE_FISHER_EXACT, kingdom=["Bacteria"], method="PathSeq",
+               patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
+               tax_level=["species", "genus", "family", "order", "class", "phylum"],
+               celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"])
+    output:
+        FIGURE_2B_1
+    script:
+        "src/plot_figure_2B_1.R"
+
+rule plot_figure_2B_2:
+    input:
+        SAMPLE_MICROBE_READ_TABLE.format(kingdom="Bacteria", method="PathSeq",
+               patient="Pt0", sample="GSM3454529", tax_level="genus"),
+        SAMPLE_SAMPLE_METADATA.format(kingdom="Bacteria", method="PathSeq",
+               patient="Pt0", sample="GSM3454529", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="Bacteria", method="PathSeq",
+               patient="Pt0"),
+    output:
+        FIGURE_2B_2
+    script:
+        "src/plot_2B_2.R"
+
+rule plot_figure_S2:
     input:
         SAMPLE_SAMPLE_METADATA.format(patient="Pt0", sample="GSM3454529", tax_level="genus", method="PathSeq", kingdom="Bacteria"),
-        "data/SRPRISM/Pt0/GSM3454529/CB-UMI-count-SL1344.tsv"
+        SRPRISM_READ_COUNT_FILE.format(patient="Pt0", sample="GSM3454529", genome="SL1344")
     output:
-        FIG1D
+        FIGURE_S2
     script:
-        "src/plot_fig1d.R"
+        "src/plot_figure_S2.R"
 
 
 # rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ data/
 # rsync -avc --include='CB-UMI-count-SL1344.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ data/
+# rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/ data/

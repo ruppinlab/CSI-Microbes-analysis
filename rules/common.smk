@@ -14,30 +14,6 @@ SAMPLE_SAMPLE_METADATA = join("output", "{patient}", "{sample}", "{tax_level}_{m
 PLATE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}", "{plate}", "{tax_level}_{method}_{kingdom}_reads.tsv")
 PLATE_SAMPLE_METADATA = join("output", "{patient}", "{sample}", "{plate}", "{tax_level}_{method}_{kingdom}_metadata.tsv")
 
-PATHSEQ_EDGELIST_FILE = join("output", "{patient}", "edgelist_{kingdom}_{method}.tsv")
-PATHSEQ_TAXID_MAP = join("output", "{patient}", "tax_id_map_{kingdom}_{method}.tsv")
-
-
-
-rule extract_PathSeq_edgelist:
-    params:
-        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
-    input:
-        "data/units.tsv"
-    output:
-        PATHSEQ_EDGELIST_FILE
-    script:
-        "../src/extract_PathSeq_edgelist.py"
-
-rule extract_name_tax_id_mapping:
-    params:
-        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
-    input:
-        "data/units.tsv"
-    output:
-        PATHSEQ_TAXID_MAP
-    script:
-        "../src/extract_PathSeq_name_tax_id.py"
 
 ### rules for splitting microbial read count files by plate or sample ###
 

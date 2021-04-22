@@ -1,8 +1,8 @@
 from os.path import join
 
 # directories
-STARsolo_PE_dir = join("data", "star", "{patient}-{sample}-{plate}", "_STARpe", "Solo.out", "Gene", "raw")
-STARsolo_SE_dir = join("data", "star", "{patient}-{sample}-{plate}", "_STARse", "Solo.out", "Gene", "raw")
+STARsolo_PE_dir = join("raw", "star", "{patient}-{sample}-{plate}", "_STARpe", "Solo.out", "Gene", "raw")
+STARsolo_SE_dir = join("raw", "star", "{patient}-{sample}-{plate}", "_STARse", "Solo.out", "Gene", "raw")
 
 # STARsolo Input Files
 STARsolo_PE_features = join(STARsolo_PE_dir, "features.tsv")

@@ -1,4 +1,4 @@
-name: CSI-Microbes-env
+name: CSI-Microbes-analysis-env
 channels:
   - conda-forge
   - bioconda
@@ -8,7 +8,6 @@ dependencies:
   - bioconductor-scran=1.16.0
   - bioconductor-scater
   - bioconductor-singlecellexperiment
-  - bioconductor-fgsea
   - pandas
   - r-ggplot2
   - r-dplyr
@@ -16,5 +15,6 @@ dependencies:
   - r-ggforce
   - r-seurat
   - r-structssi
-  - snakemake
   - rpy2
+  - snakemake
+  - statsmodels

@@ -1,16 +1,18 @@
 library(dplyr)
 library(scater)
 library(scran)
-library(ggplot2)
+#library(ggplot2)
+#library(EnhancedVolcano)
 
-# output/61_species_PathSeq_microbe_reads.tsv
 counts <- read.table(snakemake@input[[1]], sep="\t", header=TRUE, row.names=1)
 # counts <- read.table("output/Pt0_genus_PathSeq_microbe_reads.tsv", sep="\t", header=TRUE, row.names=1)
 # output/61_species_PathSeq_metadata.tsv
 pdata <- read.table(snakemake@input[[2]], sep="\t", header = TRUE, row.names=1)
 row.names(pdata) <- gsub("-", ".", row.names(pdata))
 # pdata <- read.table("output/Pt0_genus_PathSeq_metadata.tsv", sep="\t", header = TRUE, row.names=1)
+tax.map <- read.table(snakemake@input[[3]], sep="\t", header=TRUE)
 
+#
 celltype.col <- snakemake@wildcards[["celltype"]]
 celltype.of.interest <- snakemake@wildcards[["celltype_of_interest"]]
 celltype.comparison <- snakemake@wildcards[["celltype_comparison"]]
@@ -93,4 +95,8 @@ direction <- snakemake@wildcards[["direction"]]
 binom <- findMarkers(sce, test="binom", groups=groups, pval.type=pval.type, block=block, assay.type="counts", direction=direction)
 
 df <- binom[[celltype.of.interest]]
+df$taxa <- lapply(rownames(df), function(x) tax.map[tax.map$tax_id == x, "name"])
 write.table(df, file=snakemake@output[[1]], sep="\t")
+
+#EnhancedVolcano(df, lab=df$taxa, x = "summary.logFC", y = "p.value", pCutoff = .01)
+#ggsave(snakemake@output[[2]])

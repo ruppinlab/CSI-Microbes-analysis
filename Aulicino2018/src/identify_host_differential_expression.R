@@ -89,12 +89,13 @@ lfc <- as.numeric(snakemake@wildcards[["lfc"]])
 pval.type <- snakemake@wildcards[["pval.type"]]
 #pval.type <- "all"
 block <- sce[[snakemake@wildcards[["block"]]]]
+direction <- snakemake@wildcards[["direction"]]
 #block <- sce$plate
 # # calculate markers using t-test
-t.test.markers <- findMarkers(sce, groups=groups, lfc=lfc, pval.type=pval.type, block=block)
+t.test.markers <- findMarkers(sce, groups=groups, lfc=lfc, pval.type=pval.type, block=block, direction=direction)
 t.test.df <- t.test.markers[[celltype.of.interest]]
 write.table(t.test.df, file=snakemake@output[[1]], sep="\t")
 # # calculate markers using wilcoxon rank sum test
-wilcox.markers <- findMarkers(sce, groups=groups, test="wilcox", lfc=lfc, pval.type=pval.type, block=block)
+wilcox.markers <- findMarkers(sce, groups=groups, test="wilcox", lfc=lfc, pval.type=pval.type, block=block, direction=direction)
 wilcox.df <- wilcox.markers[[celltype.of.interest]]
 write.table(wilcox.df, file=snakemake@output[[2]], sep="\t")

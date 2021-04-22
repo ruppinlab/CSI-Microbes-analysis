@@ -1,7 +1,8 @@
 import pandas as pd
 
 
-cells = pd.read_csv(snakemake.input[0], sep="\t")
+cells = pd.read_csv(snakemake.input[0], sep="\t", dtype={"patient": "str"})
+#print(cells)
 cells = cells.loc[cells["patient"] == snakemake.wildcards["patient"]]
 #samples = pd.read_csv(snakemake.input[1], sep="\t")
 #samples = samples.merge(patients, on="patient").drop_duplicates()
@@ -9,9 +10,9 @@ cells = cells.loc[cells["patient"] == snakemake.wildcards["patient"]]
 tax_level = snakemake.wildcards["tax_level"]
 kingdom = snakemake.wildcards["kingdom"]
 output = []
-
+#print(cells)
 cells["cell"] = cells.apply(lambda x: "{}-{}".format(x["sample"], x["barcode"]), axis=1)
-
+#print(cells)
 for _, cell in cells.iterrows():
     try:
         filename = snakemake.params[0].format(cell["patient"], cell["sample"], cell["barcode"])
@@ -24,7 +25,8 @@ for _, cell in cells.iterrows():
                 pathseq_df = pathseq_df.loc[pathseq_df["taxonomy"].str.startswith("root|Viruses")]
             else:
                 pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
-        pathseq_df = pathseq_df.drop(columns=["tax_id", "taxonomy", "type", "kingdom", "score", "score_normalized", "reads", "reference_length"])
+        pathseq_df = pathseq_df.drop(columns=["name", "taxonomy", "type", "kingdom", "score", "score_normalized", "reads", "reference_length"])
+        pathseq_df = pathseq_df.rename(columns={"tax_id": "name"})
         if pathseq_df.empty:
             # print("EMPTY")
             pathseq_df = pd.DataFrame(data={"cell": [cell_name], "name": ["placeholder"], "unambiguous": [0]})
@@ -43,13 +45,13 @@ for _, cell in cells.iterrows():
         raise
 
 df = pd.concat(output)
-print(df)
+#print(df)
 df = df.astype({'unambiguous': 'int64'})
 # desired output - microbes are the indices and samples are the columns
 read_df = df.pivot_table(index="name", columns="cell").fillna(0)
 read_df.index.name = None  # remove index name
 read_df.columns = read_df.columns.droplevel()  # remove multi-index
-read_df.index = read_df.index.map(lambda x: x.replace("\'", "").replace("#", ""))
+#read_df.index = read_df.index.map(lambda x: x.replace("\'", "").replace("#", ""))
 read_df = read_df.sort_index(axis=1)
 
 read_df = read_df[(read_df.T != 0).any()]  # remove any rows with all zeroes
