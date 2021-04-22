@@ -1,9 +1,9 @@
 library(scran)
 library(scater)
+library(EnhancedVolcano)
+
 
 sce <- readRDS(snakemake@input[[1]])
-
-
 
 # filter to remove tumors with < 15 tumor cells (but keep TH266)
 #sce <- sce[,sce$patient %in% c("TH067", "TH171", "TH179", "TH220", "TH226", "TH231", "TH236", "TH238", "TH248", "TH266")]
@@ -16,7 +16,7 @@ tumor.of.interest <- snakemake@wildcards[["tumor_of_interest"]]
 sce <- sce[, sce$patient %in% c(uninfected.tumors, tumor.of.interest)]
 
 celltype.col <- "patient"
-min.proportion <- .5
+min.proportion <- .50
 min.cpm <- 10
 
 # get CPM using edgeR
@@ -65,13 +65,16 @@ lfc <- as.numeric(snakemake@wildcards[["lfc"]])
 #pval.type <- "all"
 pval.type <- snakemake@wildcards[["pvaltype"]]
 print(pval.type)
+direction <- snakemake@wildcards[["direction"]]
 #block <- sce[[snakemake@wildcards[["block"]]]]
 #direction <- snakemake@wildcards[["direction"]]
 # calculate markers using t-test
-t.test.markers <- findMarkers(sce, groups=sce$patient, lfc=lfc, pval.type=pval.type)
+t.test.markers <- findMarkers(sce, groups=sce$patient, lfc=lfc, pval.type=pval.type, direction=direction)
 t.test.df <- t.test.markers[[tumor.of.interest]]
 write.table(t.test.df, file=snakemake@output[[1]], sep="\t")
 # calculate markers using wilcoxon rank sum test
-wilcox.markers <- findMarkers(sce, groups=sce$patient, test="wilcox", lfc=lfc, pval.type=pval.type)
+wilcox.markers <- findMarkers(sce, groups=sce$patient, test="wilcox", lfc=lfc, pval.type=pval.type, direction=direction)
 wilcox.df <- wilcox.markers[[tumor.of.interest]]
 write.table(wilcox.df, file=snakemake@output[[2]], sep="\t")
+#EnhancedVolcano(t.test.df, lab=rownames(t.test.df), x = "summary.logFC", y = "p.value")
+#ggsave(snakemake@output[[3]])

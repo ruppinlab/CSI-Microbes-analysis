@@ -93,7 +93,7 @@ Next, you can generate figure 3 (`output/plots/figure_3A_1.pdf`, `output/plots/f
 snakemake --cores <number of CPUs> plot_figure3
 ```
 
-## Reproducing results from Paulson2018
+<!-- ## Reproducing results from Paulson2018 -->
 
 ## Reproducing results from Maynard2020
 
@@ -106,10 +106,18 @@ rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Rob
 rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
 ```
 
-# Reproducing Figure 4
+### Reproducing Figure 4
 
-Next, you can generate figure 4  using the below command
+Next, you can generate figure 4 (`output/plots/figure_4A_1.pdf`, `output/plots/figure_4A_2.pdf`, `output/plots/figure_4A_3.pdf`, `output/plots/figure_4B_1.pdf`, `output/plots/figure_4B_2.pdf`, `output/plots/figure_4B_3.pdf`, `output/plots/figure_4C_1.pdf`, `output/plots/figure_4C_2.pdf`) using the below command
 
 ```
-snakemake --cores <number of CPUs> plot_figures
+snakemake --cores <number of CPUs> plot_figure_4
+```
+
+### Reproducing Figure 5A
+
+Next, you can plot figure 5A (`output/plots/figure_5A.pdf`) using the below command
+
+```
+snakemake --cores <number of CPUs> plot_figure_5a
 ```

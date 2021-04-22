@@ -1,7 +1,14 @@
 library(scran)
 library(scater)
+# library(EnhancedVolcano)
+
+print(snakemake@wildcards[["seed"]])
+set.seed(strtoi(snakemake@wildcards[["seed"]]))
 
 sce <- readRDS(snakemake@input[[1]])
+
+# filter to remove the two samples with very few (< 15) tumor cells
+sce <- sce[,sce$patient %in% c("TH067", "TH171", "TH179", "TH220", "TH226", "TH231", "TH236", "TH238", "TH248", "TH266")]
 
 celltype.col <- "patient"
 min.proportion <- .5
@@ -47,16 +54,35 @@ detectedFeatures <- names(which(tapply(
 keepEndogenous <- (rownames(sce) %in% detectedFeatures)
 sce <- sce[keepEndogenous]
 
-groups <- ifelse(sce$patient %in% c("TH231", "TH236", "TH238", "TH266"), "infected", "control")
-lfc <- 0.5 #as.numeric(snakemake@wildcards[["lfc"]])
-#pval.type <- snakemake@wildcards[["pval.type"]]
+groups <- ifelse(sce$patient %in% c("TH231", "TH236", "TH238", "TH266"), "infected", sce$patient)
+# we have 4 infected tumors and 9 uninfected tumors - let's randomly assign a batch to each
+infected.batch <- seq(1, 4)
+#uninfected.batch <- rep_len(infected.batch, 9)
+infected.batch <- sample(infected.batch)
+names(infected.batch) <- c("TH231", "TH236", "TH238", "TH266")
+#uninfected.batch <- sample(uninfected.batch)
+#names(uninfected.batch) <- c("TH067", "TH103", "TH171", "TH179", "TH220", "TH225", "TH226", "TH227", "TH248")
+#batch <- c(infected.batch, uninfected.batch)
+sce$batch <- apply(colData(sce), 1, function(x) ifelse(x["patient"] %in% c("TH231", "TH236", "TH238", "TH266"), infected.batch[[x["patient"]]], sample(1:4, 1)))
+
+lfc <- as.numeric(snakemake@wildcards[["lfc"]])
+pval.type <- snakemake@wildcards[["pvaltype"]]
 #block <- sce[[snakemake@wildcards[["block"]]]]
-#direction <- snakemake@wildcards[["direction"]]
+direction <- snakemake@wildcards[["direction"]]
 # calculate markers using t-test
-t.test.markers <- findMarkers(sce, groups=groups, lfc=lfc)
+t.test.markers <- findMarkers(sce, groups=groups, lfc=lfc, block=sce$batch, direction=direction, pval.type=pval.type)
 t.test.df <- t.test.markers[["infected"]]
 write.table(t.test.df, file=snakemake@output[[1]], sep="\t")
 # calculate markers using wilcoxon rank sum test
-wilcox.markers <- findMarkers(sce, groups=groups, test="wilcox", lfc=lfc)
+wilcox.markers <- findMarkers(sce, groups=groups, test="wilcox", lfc=lfc, block=sce$batch, direction=direction, pval.type=pval.type)
 wilcox.df <- wilcox.markers[["infected"]]
 write.table(wilcox.df, file=snakemake@output[[2]], sep="\t")
+
+# EnhancedVolcano(df, lab=df$taxa, x = "summary.logFC", y = "p.value",
+#   FCcutoff = .5, pCutoff = .05, selectLab = microbes.of.interest, subtitle=NULL,
+#   caption=NULL, title="Infected versus Bystander", xlim=c(-2,3),
+#   ylim = c(0, -log10(10e-13))
+# )
+
+#EnhancedVolcano(t.test.df, lab=rownames(t.test.df), x = "summary.logFC", y = "p.value", subtitle=NULL, caption=NULL, title="Infected versus uninfected tumor cells")
+#ggsave(snakemake@output[[3]])
