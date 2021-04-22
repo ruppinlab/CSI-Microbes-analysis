@@ -47,7 +47,7 @@ FIGURE_S1C = join("output", "plots", "figure_S1C.pdf")
 FIGURE_2A_1 = join("output", "plots", "figure_2A_1.pdf")
 FIGURE_2A_2 = join("output", "plots", "figure_2A_2.pdf")
 # Files for SRPRISM
-PAIRED_SALMONELLA_GFF = join("data", "{patient}", "{sample}-{plate}-{cell}", "{genome}-paired-count.gff")
+PAIRED_SALMONELLA_GFF = join("raw", "{patient}", "{sample}-{plate}-{cell}", "{genome}-paired-count.gff")
 Salmonella_rRNA_Table = join("output", "Pt0", "S0", "{genome}-cell-by-rRNA-count-table.tsv")
 Salmonella_rRNA_read_count = join("output", "Pt0", "S0", "{genome}-rRNA-read-count.tsv")
 Salmonella_Gene_Table = join("output", "Pt0", "S0", "{genome}-cell-by-gene-count-table.tsv")
