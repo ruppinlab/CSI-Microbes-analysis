@@ -1,4 +1,4 @@
-name: CSI-Microbes-analysis-env
+name: CSI-Microbes-env
 channels:
   - conda-forge
   - bioconda
