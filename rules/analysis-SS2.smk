@@ -9,7 +9,7 @@ PATIENT_PATHSEQ_TAXID_MAP = join("output", "{patient}", "tax_id_map_{kingdom}_{m
 
 rule extract_PathSeq_edgelist:
     params:
-        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+        join("raw", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
     input:
         "data/units.tsv"
     output:
@@ -19,7 +19,7 @@ rule extract_PathSeq_edgelist:
 
 rule extract_name_tax_id_mapping:
     params:
-        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+        join("raw", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
     input:
         "data/units.tsv"
     output:
