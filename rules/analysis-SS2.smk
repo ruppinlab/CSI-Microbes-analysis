@@ -31,7 +31,7 @@ rule convert_PathSeq_to_read_counts:
     wildcard_constraints:
         method="PathSeq"
     params:
-        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+        join("raw", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
     input:
         "data/units.tsv",
     output:
