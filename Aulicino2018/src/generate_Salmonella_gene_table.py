@@ -2,7 +2,7 @@ import pandas as pd
 from os.path import join
 
 
-f = join("data", "{patient}", "{sample}-{plate}-{cell}", "{genome}-paired-count.gff")
+f = join("raw", "{patient}", "{sample}-{plate}-{cell}", "{genome}-paired-count.gff")
 
 col_names = ["seqname", "source", "type", "start", "end", "score", "strand", "frame", "attributes", "read_count"]
 
