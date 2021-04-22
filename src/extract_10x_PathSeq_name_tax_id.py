@@ -6,7 +6,7 @@ cells = cells.loc[cells.patient == snakemake.wildcards["patient"]]
 
 kingdom = snakemake.wildcards["kingdom"]
 output = []
-print(cells)
+#print(cells)
 cells["cell"] = cells.apply(lambda x: "{}-{}".format(x["sample"], x["barcode"]), axis=1)
 
 for _, cell in cells.iterrows():
