@@ -4,7 +4,7 @@ This repository contains part of the workflows for reproducing the results from 
 
 ## Setting up the environment
 
-This workflow has minimal computational constraints (the major computational steps are in the CSI-Microbes-identification pipeline). I run these steps locally on my Mac with 32G memory without a problem. For now, this workflow requires that you are on the NIH network (either physically present or connected via the VPN) and have access to the biowulf directory `/data/Robinson-SB/CSI-Microbes-identification` to download the necessary files. 
+This workflow has minimal computational constraints (the major computational steps are in the CSI-Microbes-identification pipeline). I run these steps locally on my Mac with 32G memory without a problem. For now, this workflow requires that you are on the NIH network (either physically present or connected via the VPN) and have access to the biowulf directory `/data/Robinson-SB/CSI-Microbes-identification` to download the necessary files.
 
 This workflow expects that conda has been installed. For instructions on how to install conda, see [conda install documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
 
@@ -48,7 +48,7 @@ rsync -avc --include='*-paired-count.gff' --include='*/' --exclude='*' helix:/da
 To generate figure 2A (`output/plots/figure_2A_1.pdf` and `output/plots/figure_2A_2.pdf`) use the below command (within the Aulicino2018 directory)
 
 ```
-snakemake --cores <number of CPUs> plot_figure2A
+snakemake --cores <number of CPUs> plot_figure_2A
 ```
 
 ### Reproducing Figure S1
