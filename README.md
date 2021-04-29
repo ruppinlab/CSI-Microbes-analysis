@@ -33,7 +33,13 @@ TODO
 
 ## Reproducing results from Aulicino2018
 
-To reproduce the results from Aulicino2018, you will need to download the PathSeq, STAR and SRPRISM files using the below command (within the Aulicino2018 directory)
+To reproduce the results from Aulicino2018, you first need to be in the `Aulicino2018` directory.
+
+```
+cd Aulicino2018
+```
+
+Next, you will need to download the PathSeq, STAR and SRPRISM files using the below command
 
 ```
 rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Aulicino2018/output/ raw/
@@ -45,7 +51,7 @@ rsync -avc --include='*-paired-count.gff' --include='*/' --exclude='*' helix:/da
 
 ### Reproducing Figure 2A
 
-To generate figure 2A (`output/plots/figure_2A_1.pdf` and `output/plots/figure_2A_2.pdf`) use the below command (within the Aulicino2018 directory)
+To generate figure 2A (`output/plots/figure_2A_1.pdf` and `output/plots/figure_2A_2.pdf`) use the below command
 
 ```
 snakemake --cores <number of CPUs> plot_figure_2A
@@ -53,7 +59,7 @@ snakemake --cores <number of CPUs> plot_figure_2A
 
 ### Reproducing Figure S1
 
-To generate figure S1 (`output/plots/figure_S1A.pdf`, `output/plots/figure_S1B.pdf`, `output/plots/figure_S1C.pdf`) use the below command (within the Aulicino2018 directory)
+To generate figure S1 (`output/plots/figure_S1A.pdf`, `output/plots/figure_S1B.pdf`, `output/plots/figure_S1C.pdf`) use the below command
 
 ```
 snakemake --cores <number of CPUs> plot_figure_S1
@@ -61,7 +67,13 @@ snakemake --cores <number of CPUs> plot_figure_S1
 
 ## Reproducing results from Ben-Moshe2019
 
-To reproduce the results from Ben-Moshe2019, you will need to download the PathSeq and SRPRISM files using the below command (within the Ben-Moshe2019 directory)
+To reproduce the results from Ben-Moshe2019, you first need to be in the `Ben-Moshe2019` directory.
+
+```
+cd Ben-Moshe2019
+```
+
+Next, you will need to download the PathSeq and SRPRISM files using the below command
 
 ```
 rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ raw/
@@ -87,7 +99,13 @@ snakemake --cores <number of CPUs> plot_figure_S2
 
 ## Reproducing results from Lee2020
 
-To reproduce figure 3, you will need to download the PathSeq files using the below command (within the Lee2020 directory)
+To reproduce the results from Lee2020, you first need to be in the `Lee2020` directory
+
+```
+cd Lee2020
+```
+
+To reproduce figure 3, you first need to download the PathSeq files using the below command
 
 ```
 rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lee2020/output/ raw/
@@ -104,7 +122,13 @@ snakemake --cores <number of CPUs> plot_figure3
 
 ## Reproducing results from Maynard2020
 
-To reproduce figure 4 and 5, you will need to download the PathSeq and STAR files using the below commands (within the Maynard2020 directory).
+To reproduce the results from Maynard2020, you first need to be in the `Maynard2020` directory
+
+```
+cd Maynard2020
+```
+
+To reproduce figure 4 and 5, you first need to download the PathSeq and STAR files using the below commands.
 
 ```
 rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
