@@ -4,6 +4,8 @@ This repository contains part of the workflows for reproducing the results from 
 
 ## Setting up the environment
 
+This workflow has minimal computational constraints (the major computational steps are in the CSI-Microbes-identification pipeline). I run these steps locally on my Mac with 32G memory without a problem. For now, this workflow requires that you are on the NIH network (either physically present or connected via the VPN) and have access to the biowulf directory `/data/Robinson-SB/CSI-Microbes-identification` to download the necessary files. 
+
 This workflow expects that conda has been installed. For instructions on how to install conda, see [conda install documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
 
 Next, the GitHub repository needs to be cloned as below. The below instructions assume that you have an ssh key associated with your GitHub account. If you do not, you can generate a new ssh key and associate it with your GitHub username by following [these instructions](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
@@ -12,11 +14,16 @@ Next, the GitHub repository needs to be cloned as below. The below instructions 
 git clone git@github.com:ruppinlab/CSI-Microbes-analysis.git
 ```
 
-Next, you need to create the conda environment.
+Next, you need to create the conda environment (you need to perform this step only once unless you explicitly delete the conda environment).
 
 ```
 cd CSI-Microbes-analysis
 conda env create -f envs/CSI-Microbes-analysis.yaml
+```
+
+Finally, you need to activate the recently created conda environment (all of the commands assume that the conda environment `CSI-Microbes-env` is active).
+
+```
 conda activate CSI-Microbes-env
 ```
 
