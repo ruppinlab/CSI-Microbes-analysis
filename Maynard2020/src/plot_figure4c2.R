@@ -45,13 +45,13 @@ df[[celltype.col]] <- factor(df[[celltype.col]], levels=c("Tumor", "immune", "ep
 levels(df[[celltype.col]]) <- c("Tumor", "Immune", "Epithelial", "Stroma")
 
 # rename rownames from tax_id to names
-fig.1a <- ggplot(df, aes_string(x=celltype.col, y="Leptotrichia")) +
+fig.1a <- ggplot(df, aes_string(x=celltype.col, y="Malassezia")) +
   geom_boxplot(outlier.alpha = 0) +
   geom_jitter(aes_string(color=celltype.col), alpha=0.6, size=2) +
   theme_pubr(legend="none", base_size=8) + # , base_size= 10 to set font size
   ylab("log2(spike-in normalized abundance + 1)") +
   xlab(NULL) +
   scale_color_npg() +
-  ggtitle("Leptotrichia") +
+  ggtitle("Malassezia") +
 
 ggsave(snakemake@output[[1]], width = 4, height = 3, units = "in")

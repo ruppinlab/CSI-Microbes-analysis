@@ -10,6 +10,7 @@ wildcard_constraints:
 
 include: "../rules/common.smk"
 include: "../rules/analysis-10x.smk"
+include: "../rules/hFDR.smk"
 
 
 
@@ -40,6 +41,31 @@ rule all:
         FIGURE3A_2,
         FIGURE3B_1,
         FIGURE3B_2,
+        SAMPLE_hFDR_FISHER_MARKERS.format(patient="SC001", sample="Sample1a",
+                                          celltype="Tumor", celltype_of_interest="Tumor",
+                                          celltype_comparison="nonTumor",
+                                          method="PathSeq", kingdom="Bacteria", minprop=0.01),
+        SAMPLE_hFDR_FISHER_MARKERS.format(patient="SC019", sample="Sample2a",
+                                          celltype="Tumor", celltype_of_interest="Tumor",
+                                          celltype_comparison="nonTumor",
+                                          method="PathSeq", kingdom="Bacteria", minprop=0.01),
+        SAMPLE_hFDR_FISHER_MARKERS.format(patient="SC021", sample="Sample3a",
+                                          celltype="Tumor", celltype_of_interest="Tumor",
+                                          celltype_comparison="nonTumor",
+                                          method="PathSeq", kingdom="Bacteria", minprop=0.01),
+        SAMPLE_hFDR_FISHER_MARKERS.format(patient="SC028", sample="Sample6a",
+                                          celltype="Tumor", celltype_of_interest="Tumor",
+                                          celltype_comparison="nonTumor",
+                                          method="PathSeq", kingdom="Bacteria", minprop=0.01),
+        SAMPLE_hFDR_FISHER_MARKERS.format(patient="SC030", sample="Sample8a",
+                                          celltype="Tumor", celltype_of_interest="Tumor",
+                                          celltype_comparison="nonTumor",
+                                          method="PathSeq", kingdom="Bacteria", minprop=0.01),
+        SAMPLE_hFDR_FISHER_MARKERS.format(patient="SC031", sample="Sample9a",
+                                          celltype="Tumor", celltype_of_interest="Tumor",
+                                          celltype_comparison="nonTumor",
+                                          method="PathSeq", kingdom="Bacteria", minprop=0.01),
+
 
 rule plot_figure3:
     input:
@@ -50,6 +76,10 @@ rule plot_figure3:
 
 rule plot_figure3A_1:
     input:
+        SAMPLE_hFDR_FISHER_MARKERS.format(patient="SC028", sample="Sample6a",
+                                          celltype="Tumor", celltype_of_interest="Tumor",
+                                          celltype_comparison="nonTumor",
+                                          method="PathSeq", kingdom="Bacteria", minprop=0.01),
         expand(SAMPLE_FISHER_EXACT, patient="SC028", sample="Sample6a",
                celltype="Tumor", celltype_of_interest="Tumor", minprop=0.01,
                celltype_comparison="nonTumor", method="PathSeq", kingdom="All",

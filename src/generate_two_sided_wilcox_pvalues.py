@@ -20,7 +20,7 @@ def combine_results(x):
         x = down_x
         auc = min(x["summary.AUC"].median(), .5)
     # multiply by 2 to convert from one-sided to two-sided (but p-values can't be greater than 1)
-    return pd.Series({"p.value": min(x["p.value"].multiply(2).median(), 1), "summary.AUC": auc, "taxa": x["taxa"].iloc[0]})
+    return pd.Series({"p.value": min(x["p.value"].multiply(2).median(), 1), "summary.AUC": auc, "n.reads": x["n.reads"].iloc[0], "taxa": x["taxa"].iloc[0]})
     # need to convert two-sided p-value to one-sided p-value
 
 #ind = snakemake.params[["index"]]
@@ -29,13 +29,13 @@ def combine_results(x):
 #down_output = []
 #for i in snakemake.input["up"]:
 up_df = pd.read_csv(snakemake.input["up"], sep="\t", index_col=0)
-up_df = up_df.reset_index()[["index", "p.value", "summary.AUC", "taxa"]]
+up_df = up_df.reset_index()[["index", "p.value", "summary.AUC", "n.reads", "taxa"]]
 # up_output.append(df)
     #gene_list.append(df.gene)
 
 #for i in snakemake.input["down"]:
 down_df = pd.read_csv(snakemake.input["down"], sep="\t", index_col=0)
-down_df = down_df.reset_index()[["index", "p.value", "summary.AUC", "taxa"]]
+down_df = down_df.reset_index()[["index", "p.value", "summary.AUC", "n.reads", "taxa"]]
 # down_output.append(df)
     #gene_list.append(df.gene)
 

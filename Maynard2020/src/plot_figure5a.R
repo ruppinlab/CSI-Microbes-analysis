@@ -17,11 +17,11 @@ df <- read.table(snakemake@input[[1]], header=TRUE)
 df$diffexpressed <- "NO"
 df$diffexpressed[df$summary.AUC > 0.55 & df$p.value < 10e-6] <- "UP"
 df$diffexpressed[df$summary.AUC < 0.45 & df$p.value < 10e-6] <- "DOWN"
-
+print(df)
 df$delabel <- NA
 df$delabel[df$diffexpressed != "NO"] <- rownames(df)[df$diffexpressed != "NO"]
 
-mycolors <- c("red", "red", "grey")
+mycolors <- c("blue", "red", "grey")
 names(mycolors) <- c("DOWN", "UP", "NO")
 
 ggplot(df, aes(x=summary.AUC, y=-log10(p.value), color=diffexpressed, label=delabel)) +

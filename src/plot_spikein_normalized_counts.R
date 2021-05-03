@@ -7,7 +7,6 @@ sce <- generate_sce(microbe.file=snakemake@input[[1]], spikein.file=snakemake@in
   pdata.file=snakemake@input[[3]], celltype.col=snakemake@wildcards[["celltype"]])
 
 tax.map <- read.table(snakemake@input[[4]], sep="\t", header=TRUE)
-species.tax.map <- tax.map[tax.map$taxa_level == snakemake@wildcards[["tax_level"]],]
 
 # rename rownames from tax_id to names
 rownames(sce) <- lapply(rownames(sce), function(x) tax.map[tax.map$tax_id == x, "name"])

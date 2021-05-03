@@ -7,25 +7,33 @@ library(scales)
 
 
 # input <- c("output/Pt0/GSM3454529/fisher-exact-Monocyte-Monocyte-nonMonocyte-phylum-PathSeq-Bacteria.tsv", "output/Pt0/GSM3454529/fisher-exact-Monocyte-Monocyte-nonMonocyte-class-PathSeq-Bacteria.tsv", "output/Pt0/GSM3454529/fisher-exact-Monocyte-Monocyte-nonMonocyte-order-PathSeq-Bacteria.tsv", "output/Pt0/GSM3454529/fisher-exact-Monocyte-Monocyte-nonMonocyte-family-PathSeq-Bacteria.tsv", "output/Pt0/GSM3454529/fisher-exact-Monocyte-Monocyte-nonMonocyte-genus-PathSeq-Bacteria.tsv", "output/Pt0/GSM3454529/fisher-exact-Monocyte-Monocyte-nonMonocyte-species-PathSeq-Bacteria.tsv")
-my_data <- lapply(snakemake@input, read.table)
+# print(snakemake@input)
+# print(unlist(snakemake@input))
+# print(unlist(snakemake@input)[c(2,3,4,5,6)])
+# print(snakemake@input[[2:]])
+
+my_data <- lapply(unlist(snakemake@input)[c(2,3,4,5,6)], read.table)
 #my_data <- lapply(input, read.table)
 
 
 df <- do.call(rbind, my_data)
 #print(df)
 
+hFDR.df <- read.table(snakemake@input[[1]], header=TRUE)
+print(hFDR.df)
+
 # taken from - https://stackoverflow.com/questions/47085514/simple-way-to-visualise-odds-ratios-in-r
 # scales::pseudo_log_trans taken from https://stackoverflow.com/questions/40219639/how-to-deal-with-zero-in-log-plot
 
-# remove taxa where child has identical score
-df <- df[!(df$taxa %in% c("Bacteroidia", "Bacteroidaceae", "Leptotrichiaceae")),]
+# only keep taxa kept by hFDR filtering
+df <- df[(df$taxa %in% hFDR.df$name),]
 
 # print(df[order(df$p.value),])
 df$taxa <- factor(df$taxa, levels=df[order(-df$p.value),]$taxa)
 print(df[order(-df$p.value),])
 # levels(df$taxa) <- taxa
 
-ggplot(df, aes(x = odds.ratio, y = taxa)) +
+ggplot(df, aes(x = summary.odds.ratio, y = taxa)) +
   geom_vline(aes(xintercept = 1), size = .25, linetype="dashed") +
   geom_errorbarh(aes(xmax = or.ci.high, xmin=or.ci.low), size = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, color = "orange") +

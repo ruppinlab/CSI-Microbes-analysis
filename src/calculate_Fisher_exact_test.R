@@ -9,7 +9,7 @@ calculate.Fishers.exact <- function(tax.id) {
   celltype.comparison.negative <- dim(sce[,colData(sce)[[celltype.col]] == celltype.comparison & counts(sce)[tax.id,] == 0])[[2]]
   mat <- matrix(c(celltype.of.interest.positive, celltype.of.interest.negative, celltype.comparison.positive, celltype.comparison.negative), nrow=2, ncol=2, byrow=TRUE)
   f.test <- fisher.test(mat)
-  return(c("p.value"=f.test$p.value[[1]], "odds.ratio"=f.test$estimate[[1]], "or.ci.low"=f.test$conf.int[[1]], "or.ci.high"=f.test$conf.int[[2]]))
+  return(c("p.value"=f.test$p.value[[1]], "summary.odds.ratio"=f.test$estimate[[1]], "or.ci.low"=f.test$conf.int[[1]], "or.ci.high"=f.test$conf.int[[2]], "n.reads"=sum(counts(sce)[tax.id,])))
 }
 
 counts <- read.table(snakemake@input[[1]], sep="\t", header=TRUE, row.names=1)
@@ -36,24 +36,13 @@ print(class(counts))
 # if there are no reads, then write empty data.frame
 if (nrow(counts) == 0){
   print("There are no reads at all. Writing empty data.frame")
-  df <- data.frame(p.value=double(), odds.ratio=double(), or.ci.low=double(), or.ci.high=double(), taxa=character())
-  # if (celltype.comparison != "all"){
-  #   n <- paste0("LogFC.", celltype.comparison)
-  #   df[n] = double()
-  # } else {
-  #   cols <- setdiff(unique(pdata[[celltype.col]]), celltype.of.interest)
-  #   for (c in cols)
-  #   {
-  #     n <- paste0("LogFC.", c)
-  #     df[n] <- double()
-  #   }
-  # }
+  df <- data.frame(p.value=double(), summary.odds.ratio=double(), or.ci.low=double(), or.ci.high=double(), taxa=character())
   write.table(df, file=snakemake@output[[1]], sep="\t")
   quit()
 }
 
 sce <- SingleCellExperiment(assays = list(counts = as.matrix(counts)), colData=pdata)
-
+print(sce)
 min.proportion <- as.numeric(snakemake@wildcards[["minprop"]])
 
 # get the proportion of cells with count > 0 for all possible combinations of cell group and gene
@@ -63,7 +52,7 @@ propOver0byGroup <- apply(
   function(x){
   tapply(x, sce[[celltype.col]], function(x){sum(x > 0) / length(x)})
 })
-
+print(propOver0byGroup)
 if (length(unique(sce[[celltype.col]])) == 1){
   propOver0byGroup <- t(as.matrix(propOver0byGroup))
   rownames(propOver0byGroup) <- unique(sce[[celltype.col]])
@@ -94,22 +83,11 @@ sce <- sce[keepEndogenous]
 
 #print(sce)
 #print(assays(sce)$counts)
-# check again
+# check again after filtering
 if (nrow(assays(sce)$counts) == 0){
   print("There are no reads at all. Writing empty data.frame")
   # "p.value"	"odds.ratio"	"or.ci.low"	"or.ci.high"	"taxa"
-  df <- data.frame(p.value=double(), odds.ratio=double(), or.ci.low=double(), or.ci.high=double(), taxa=character())
-  # if (celltype.comparison != "all"){
-  #   n <- paste0("LogFC.", celltype.comparison)
-  #   df[n] = double()
-  # } else {
-  #   cols <- setdiff(unique(pdata[[celltype.col]]), celltype.of.interest)
-  #   for (c in cols)
-  #   {
-  #     n <- paste0("LogFC.", c)
-  #     df[n] <- double()
-  #   }
-  # }
+  df <- data.frame(p.value=double(), summary.odds.ratio=double(), or.ci.low=double(), or.ci.high=double(), taxa=character())
   write.table(df, file=snakemake@output[[1]], sep="\t")
   quit()
 }

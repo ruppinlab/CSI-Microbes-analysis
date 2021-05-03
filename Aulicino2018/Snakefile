@@ -46,6 +46,10 @@ FIGURE_S1B = join("output", "plots", "figure_S1B.pdf")
 FIGURE_S1C = join("output", "plots", "figure_S1C.pdf")
 FIGURE_2A_1 = join("output", "plots", "figure_2A_1.pdf")
 FIGURE_2A_2 = join("output", "plots", "figure_2A_2.pdf")
+
+# Supplementary Tables
+TABLE_S1_3 = join("output", "{genome}_gene_reads_supplementary_table1.tsv")
+TABLE_S1_1 = join("output", "table_S1.tsv")
 # Files for SRPRISM
 PAIRED_SALMONELLA_GFF = join("raw", "{patient}", "{sample}-{plate}-{cell}", "{genome}-paired-count.gff")
 Salmonella_rRNA_Table = join("output", "Pt0", "S0", "{genome}-cell-by-rRNA-count-table.tsv")
@@ -87,13 +91,14 @@ genera= ['Salmonella', 'Paracoccus', 'Acidovorax', 'Sphingomonas',
 
 rule all:
     input:
+        TABLE_S1_1,
         FIGURE_2A_1,
         FIGURE_2A_2,
-        #expand(Salmonella_Gene_read_count, genome=["D23580", "LT2"])
-        # expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-        #        patient="Pt0", celltype=["infected"], lfc=["0.5"],
-        #        celltype_of_interest="infected", celltype_comparison=["bystander"],
-        #        norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
+        expand(TABLE_S1_3, genome=["D23580", "LT2"]),
+        expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
+               patient="Pt0", celltype=["infected"], lfc=["0.5"],
+               celltype_of_interest="infected", celltype_comparison=["bystander"],
+               norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
         # expand(PATIENT_HOST_MICROBE_CORRELATION_RANK_GSEA, patient="Pt0",
         #        kingdom="Bacteria", tax_level="genus", microbe="Salmonella",
         #        celltype="infected", celltype_of_interest="infected",
@@ -107,6 +112,7 @@ rule all:
         #        celltype_of_interest="infected", celltype_comparison=["bystander"],
         #        norm="spike", pvaltype="any", block="patient", direction=["both"], minprop="0.5"),
 
+### Figures ###
 
 rule plot_figure_S1:
     input:
@@ -146,6 +152,29 @@ rule plot_figure2A_1:
         FIGURE_2A_2
     script:
         "src/plot_figure_2A_2.R"
+
+### Tables ###
+
+rule generate_Supplementary_Table1_gene_list:
+    input:
+        "data/units.tsv",
+        Salmonella_Gene_Table
+    output:
+        TABLE_S1_3
+    script:
+        "src/generate_STable1_gene_read_count.py"
+
+rule generate_table_S1:
+    input:
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
+               patient="Pt0", celltype=["infected"], lfc=["0.5"], sample="S0",
+               tax_level=["species", "genus", "family", "order", "class", "phylum"],
+               celltype_of_interest="infected", celltype_comparison=["bystander"],
+               norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5")
+    output:
+        TABLE_S1_1
+    script:
+        "src/generate_table_S1.R"
 
 rule gsea_results:
     input:
@@ -288,7 +317,7 @@ rule plot_figure_S1A:
     script:
         "src/plot_figure_S1A.R"
 
-rule plot_figuse_S1B:
+rule plot_figure_S1B:
     input:
         Salmonella_rRNA_read_count.format(genome="D23580"),
         join("data", "units.tsv")

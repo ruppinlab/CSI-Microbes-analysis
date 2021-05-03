@@ -72,6 +72,8 @@ sce <- sce[keepEndogenous]
 
 celltype <- sce[[celltype.col]]
 
+# include n.reads in the output file
+n.reads <- rowSums(counts(sce))
 # filter so we are only comparing highly expressed OTUs to reduce FDR penalty
 # agg <- aggregate(colnames(sce), by=list(sce[[celltype.col]]), FUN=length)
 # min.cells <- min(agg$x)*.5
@@ -83,15 +85,20 @@ lfc <- as.numeric(snakemake@wildcards[["lfc"]])
 pval.type <- snakemake@wildcards[["pval.type"]]
 block <- sce[[snakemake@wildcards[["block"]]]]
 direction <- snakemake@wildcards[["direction"]]
+
 # calculate markers using t-test
 t.test.markers <- findMarkers(sce, groups=groups, lfc=lfc, pval.type=pval.type, block=block, direction=direction)
 t.test.df <- t.test.markers[[celltype.of.interest]]
+t.test.df <- cbind(t.test.df, n.reads=n.reads[row.names(t.test.df)])
+t.test.df <- transform(t.test.df, n.reads=as.integer(n.reads))
 t.test.df$taxa <- lapply(rownames(t.test.df), function(x) tax.map[tax.map$tax_id == x, "name"])
-
 write.table(t.test.df, file=snakemake@output[[1]], sep="\t")
+
 # calculate markers using wilcoxon rank sum test
 wilcox.markers <- findMarkers(sce, groups=groups, test="wilcox", lfc=lfc, pval.type=pval.type, block=block, direction=direction)
 wilcox.df <- wilcox.markers[[celltype.of.interest]]
+wilcox.df <- cbind(wilcox.df, n.reads=n.reads[row.names(wilcox.df)])
+wilcox.df <- transform(wilcox.df, n.reads=as.integer(n.reads))
 wilcox.df$taxa <- lapply(rownames(wilcox.df), function(x) tax.map[tax.map$tax_id == x, "name"])
 write.table(wilcox.df, file=snakemake@output[[2]], sep="\t")
 

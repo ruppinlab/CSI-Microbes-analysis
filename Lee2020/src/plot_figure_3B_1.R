@@ -22,7 +22,7 @@ print(df)
 df$taxa <- factor(df$taxa, levels=df[order(-df$p.value),]$taxa)
 # levels(df$taxa) <- taxa
 
-ggplot(df, aes(x = odds.ratio, y = taxa)) +
+ggplot(df, aes(x = summary.odds.ratio, y = taxa)) +
   geom_vline(aes(xintercept = 1), size = .25, linetype="dashed") +
   geom_errorbarh(aes(xmax = or.ci.high, xmin=or.ci.low), size = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, color = "orange") +

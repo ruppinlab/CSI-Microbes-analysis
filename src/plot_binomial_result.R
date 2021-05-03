@@ -10,8 +10,11 @@ microbe.counts <- read.table(snakemake@input[[1]], sep="\t", header=TRUE, row.na
 # pdata <- read.table("output/Pt0/GSM3454529_genus_PathSeq_Bacteria_metadata.tsv", sep="\t", header=TRUE)
 pdata <- read.table(snakemake@input[[2]], sep="\t", header=TRUE)
 
+tax.map <- read.table(snakemake@input[[3]], sep="\t", header=TRUE)
 
 sce <- SingleCellExperiment(assays = list(counts = as.matrix(microbe.counts)), colData=pdata)
+
+rownames(sce) <- lapply(rownames(sce), function(x) tax.map[tax.map$tax_id == x, "name"])
 
 # celltype.col <- "Monocyte"
 celltype.col <- snakemake@wildcards[["celltype"]]

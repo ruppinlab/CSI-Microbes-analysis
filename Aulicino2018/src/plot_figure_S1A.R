@@ -13,10 +13,10 @@ gene.counts <- read.table(snakemake@input[[2]], sep="\t", header=FALSE, col.name
 # gene.counts <- read.table("output/Pt0/S0/D23580-gene-read-count.tsv", sep="\t", header=FALSE, col.names=c("cell", "reads"), row.names=1)
 rRNA.counts <- read.table(snakemake@input[[3]], sep="\t", header=FALSE, col.names=c("cell", "reads"), row.names=1)
 # rRNA.counts <- read.table("output/Pt0/S0/D23580-rRNA-read-count.tsv", sep="\t", header=FALSE, col.names=c("cell", "reads"), row.names=1)
-# print(gene.counts)
-# print(rRNA.counts)
+print(gene.counts)
+print(rRNA.counts)
 counts <- gene.counts + rRNA.counts
-# print(counts)
+print(counts)
 # subset so both tables have the same rows
 row.names <- intersect(unique(rownames(pdata)), unique(rownames(counts)))
 pdata <- pdata[row.names,]

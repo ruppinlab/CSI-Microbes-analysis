@@ -12,7 +12,7 @@ counts <- read.table(snakemake@input[[1]], sep="\t", header=FALSE, col.names=c("
 #counts <- read.table("data/SRPRISM/Pt0/S0/rRNA_read_counts.tsv", sep="\t", header=FALSE, col.names=c("cell", "reads"), row.names=1)
 pdata <- read.table(snakemake@input[[2]], sep="\t", header = TRUE, row.names=2)
 #pdata <- read.table("data/units.tsv", sep="\t", header=TRUE, row.names=2)
-
+print(counts)
 # subset so both tables have the same rows
 row.names <- intersect(unique(rownames(pdata)), unique(rownames(counts)))
 pdata <- pdata[row.names,]

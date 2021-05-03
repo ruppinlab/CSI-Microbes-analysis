@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from anytree import Node, RenderTree
 from anytree.exporter import DotExporter
 from rpy2.robjects.packages import importr
@@ -13,21 +14,21 @@ hFDR = ro.r["hFDR.adjust"]
 # when no children, it is a leaf node and you just return the node and the p-value
 # when you have children, you call build_tree on each child
 # build_tree returns a node (the root node of a tree)
-def build_tree(node_name, el, pval_dict, auc_dict):
+def build_tree(node_name, el, pval_dict, auc_dict, n_reads_dict):
     pvalue = pval_dict.get(node_name)
     auc = auc_dict.get(node_name)
-    node = Node(node_name, pvalue=pvalue, metric=auc, removed_children=[])
+    n_reads = n_reads_dict.get(node_name)
+    node = Node(node_name, pvalue=pvalue, metric=auc, n_reads=n_reads, removed_children=[])
     children = el.loc[el.parent == node_name]
     child_nodes = []
     for index, child in children.iterrows():
-        child_node = build_tree(child["child"], el, pval_dict, auc_dict)
+        child_node = build_tree(child["child"], el, pval_dict, auc_dict, n_reads_dict)
         child_node.parent = node
     return node
 
 # the function prunes nodes that were not evaluated due to low expression
 # in addition, it removes single child nodes
 def update_tree(node):
-    print(node)
     n_children = len(node.children)
     if n_children == 0:
         return node
@@ -82,6 +83,12 @@ def get_auc_dict_from_tree(node):
         node_dict.update(get_auc_dict_from_tree(child))
     return node_dict
 
+def get_nreads_dict_from_tree(node):
+    node_dict = {node.name: node.n_reads}
+    for child in node.children:
+        node_dict.update(get_nreads_dict_from_tree(child))
+    return node_dict
+
 # this returns a dataframe representing an edgelist of the tree
 def get_edgelist_from_tree(node):
     el = pd.DataFrame(columns=["parent", "child"])
@@ -103,11 +110,13 @@ def run_hFDR_adjust(name, df, el):
     df.index = df.index.astype("str")
     pval_dict = df["p.value"].to_dict()
     auc_dict = df["summary.{}".format(metric)].to_dict()
+    n_reads_dict = df["n.reads"].to_dict()
     # build tree
-    tree = build_tree(str(name), el, pval_dict, auc_dict)
+    tree = build_tree(str(name), el, pval_dict, auc_dict, n_reads_dict)
     tree = update_tree(tree)
     pvalues = get_pvalues_from_tree(tree)
     aucs = get_auc_dict_from_tree(tree)
+    n_reads = get_nreads_dict_from_tree(tree)
     removed_children = get_removed_children_from_tree(tree)
     print(pvalues)
     # construct R object to pass to hFDR.adjust
@@ -144,7 +153,7 @@ def run_hFDR_adjust(name, df, el):
     #print(pd.Series(data=aucs))
     #print("printing expected output")
     #print(pd_from_r_df)
-    out = pd_from_r_df.merge(pd.Series(data=aucs).to_frame(name="metric"), left_index=True, right_index=True)
+    out = pd_from_r_df.merge(pd.DataFrame(data={"metric": aucs, "n.reads": n_reads}), left_index=True, right_index=True)
     # now add back in the removed children
     removed_children_list = []
     removed_children_list.append(out)
@@ -152,7 +161,7 @@ def run_hFDR_adjust(name, df, el):
         #print(row)
         parent_row = out.loc[row["parent"]]
         #print(parent_row)
-        new_df = pd.DataFrame(index=[str(row["child"])], columns=["unadjp", "adjp", "adj.significance", "metric"], data=[[parent_row["unadjp"], parent_row["adjp"], parent_row["adj.significance"], parent_row["metric"]]])
+        new_df = pd.DataFrame(index=[str(row["child"])], columns=["unadjp", "adjp", "adj.significance", "metric", "n.reads"], data=[[parent_row["unadjp"], parent_row["adjp"], parent_row["adj.significance"], parent_row["metric"], parent_row["n.reads"]]])
         removed_children_list.append(new_df)
     return pd.concat(removed_children_list)
 
@@ -168,13 +177,19 @@ genus_df = pd.read_csv(snakemake.input["genus_markers"], sep="\t", index_col=0)
 species_df = pd.read_csv(snakemake.input["species_markers"], sep="\t", index_col=0)
 
 df = pd.concat([class_df, order_df, family_df, genus_df, species_df])
-#print(df)
+#nreads_df = df["n.reads"]
 metric = snakemake.params["metric"]
+
+# when there are no microbial reads found above the background
+if df.empty:
+    df = pd.DataFrame(columns=["name", "taxa_level", "unadjp", "adjp", "summary.{}".format(metric), "n.reads", "tax_id"])
+    df.to_csv(snakemake.output[0], sep="\t", index=False)
+    quit()
 
 output = []
 # loop through the class p-values and run hFDR if they have p-value < .05
 for index, class_row in class_df.iterrows():
-    #print(class_row.name)
+    print(class_row.name)
     if class_row["p.value"] < .05:
         #print(class_row.name)
         #print(df)
@@ -184,18 +199,24 @@ for index, class_row in class_df.iterrows():
         #print(out)
         output.append(out)
     else:
-        new_df = pd.DataFrame(index=[str(class_row.name)], columns=["unadjp", "adjp", "adj.significance", "summary.{}".format(metric)], data=[[class_row["p.value"], class_row["p.value"], "_", class_row["summary.{}".format(metric)]]])
-        #print(new_df)
+        new_df = pd.DataFrame(index=[str(class_row.name)], columns=["unadjp", "adjp", "adj.significance", "summary.{}".format(metric), "n.reads"], data=[[class_row["p.value"], class_row["p.value"], "_", class_row["summary.{}".format(metric)], class_row["n.reads"]]])
+        print(new_df)
         output.append(new_df)
 
 n_hypotheses = class_df.shape[0]
 df = pd.concat(output)
-df.adjp = df.adjp.apply(lambda x: min(1, x * n_hypotheses))
+print(df)
+df.adjp = df.adjp.apply(lambda x: np.nan if np.isnan(x) else min(1, x * n_hypotheses))
 df = df.merge(taxID_map_df, left_index=True, right_on="tax_id")
-if metric == "AUC":
-    df["summary.AUC"] = df["summary.AUC"].fillna(.5)
-else: # metric == "logFC"
-    df["summary.LogFC"] = df["summary.logFC"].fillna(0)
-df[["name", "taxa_level", "unadjp", "adjp", "summary.{}".format(metric), "tax_id"]].sort_values(by=["adjp", "unadjp"]).to_csv(snakemake.output[0], sep="\t", index=False)
+# if metric == "AUC":
+#     df["summary.AUC"] = df["summary.AUC"].fillna(.5)
+# elif metric == "logFC":
+#     df["summary.LogFC"] = df["summary.logFC"].fillna(0)
+# elif metric == "odds.ratio":
+#     df["summary.odds.ratio"] = df["summary.odds.ratio"].fillna(1)
+# remove "artifacts"
+df = df.loc[~df["summary.{}".format(metric)].isna()]
+df["n.reads"] = df["n.reads"].astype("int64")
+df[["name", "taxa_level", "unadjp", "adjp", "summary.{}".format(metric), "n.reads", "tax_id"]].sort_values(by=["adjp", "unadjp", "n.reads"]).to_csv(snakemake.output[0], sep="\t", index=False, na_rep="NA")
 
 # DotExporter(tree).to_picture("output/plots/Actinobacteria_tree.png")

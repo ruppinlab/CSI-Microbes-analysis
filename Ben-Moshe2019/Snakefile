@@ -17,22 +17,30 @@ SAMPLE_BINOM_VOLCANO_ALL_TAXA = join("output", "volcano_plot_all_taxa.pdf")
 FIGURE_2B_1 = join("output", "plots", "figure_2B_1.pdf")
 FIGURE_2B_2 = join("output", "plots", "figure_2B_2.pdf")
 
+TABLE_S1_2 = join("output", "Table_S1_2.tsv")
+
 SRPRISM_READ_COUNT_FILE = join("raw", "SRPRISM", "{patient}", "{sample}", "CB-UMI-count-{genome}.tsv")
 
 rule all:
     input:
+        TABLE_S1_2,
         FIGURE_S2,
         FIGURE_2B_1,
         FIGURE_2B_2,
-        # expand(SAMPLE_FISHER_EXACT, patient="Pt0", sample=["GSM3454529"], tax_level=["class", "order", "family", "genus", "species"],
-        #        microbe_of_interest="Salmonella",
-        #        celltype="Monocyte", celltype_of_interest="Monocyte", celltype_comparison="nonMonocyte",
-        #        method="PathSeq", kingdom="Bacteria"),
+        SAMPLE_hFDR_FISHER_MARKERS.format(patient="Pt0", sample="GSM3454529",
+                                          celltype="Monocyte", celltype_of_interest="Monocyte",
+                                          celltype_comparison="nonMonocyte",
+                                          method="PathSeq", kingdom="Bacteria", minprop=0),
+        expand(SAMPLE_FISHER_EXACT, patient="Pt0", sample=["GSM3454529"], tax_level=["class", "order", "family", "genus", "species"],
+               microbe_of_interest="Salmonella", minprop=0,
+               celltype="Monocyte", celltype_of_interest="Monocyte", celltype_comparison="nonMonocyte",
+               method="PathSeq", kingdom="Bacteria"),
         # expand(FIGURE2B_extended, patient="Pt0", sample=["GSM3454529"], tax_level="genus",
         #        microbe_of_interest="Salmonella",
         #        celltype="Monocyte", celltype_of_interest="Monocyte", celltype_comparison="nonMonocyte",
         #        method="PathSeq", kingdom="Bacteria"),
 
+### Rules for Figures ###
 
 rule plot_figure_2B:
     input:
@@ -73,6 +81,18 @@ rule plot_figure_S2:
     script:
         "src/plot_figure_S2.R"
 
+### Rules for Supplementary Tables ###
+
+rule generate_table_S1:
+    input:
+        expand(SAMPLE_FISHER_EXACT, kingdom=["Bacteria"], method="PathSeq",
+               patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
+               tax_level=["species", "genus", "family", "order", "class", "phylum"],
+               celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"])
+    output:
+        TABLE_S1_2
+    script:
+        "src/generate_table_S1_2.R"
 
 # rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ data/
 # rsync -avc --include='CB-UMI-count-SL1344.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ data/

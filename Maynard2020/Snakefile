@@ -102,6 +102,14 @@ PATIENT_HOST_GENE_MICROBE_ABUNDANCE_CORRELATION = join(
 # patients with multiple samples - TH248 and LT_S69 and LT_S74; TH226 and LT_S52 and LT_S57; TH179 and LT_S58 and LT_S79
 rule all:
     input:
+        expand(PATIENT_hFDR_WILCOX_MARKERS, method="PathSeq", kingdom="Bacteria",
+               celltype="celltype1", celltype_of_interest="Tumor", celltype_comparison="immune",
+               minprop=".5", block="plate", pvaltype="all", norm="spike", lfc=".5",
+               direction="both", patient=units.patient.unique()),
+        expand(PATIENT_hFDR_WILCOX_MARKERS, method="PathSeq", kingdom="Bacteria",
+               celltype="Stroma", celltype_of_interest="Stroma", celltype_comparison="nonStroma",
+               minprop=".5", block="plate", pvaltype="all", norm="spike", lfc=".5",
+               direction="both", patient=patients_with_stroma_cells),
         # FIGURE5A1,
         FIGURE4A2,
         FIGURE4A3,
@@ -252,12 +260,12 @@ rule plot_figure4c2:
     params:
         spike_functions="../src/spike_normalization_functions.R"
     input:
-        PLATE_MICROBE_READ_TABLE.format(kingdom="Bacteria", method="PathSeq",
+        PLATE_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
                patient="TH231", tax_level="genus", plate="B003119", sample="LT_S56"),
         PLATE_SPIKEIN_READCOUNT.format(patient="TH231", plate="B003119", sample="LT_S56"),
-        PLATE_SAMPLE_METADATA.format(kingdom="Bacteria", method="PathSeq",
+        PLATE_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
                patient="TH231", tax_level="genus", plate="B003119", sample="LT_S56"),
-        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="Bacteria", method="PathSeq",
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
                patient="TH231"),
     output:
         FIGURE4C2

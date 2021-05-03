@@ -61,4 +61,4 @@ fig.1d <- ggplot(df, aes(celltype, percentage, fill=celltype)) +
 #    stat_pvalue_manual(data, "binomial test p-value = {p}") +
 #    scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
-ggsave(snakemake@output[[1]], width = 2, height = 3.5, units = "in")
+ggsave(snakemake@output[[1]], width = 3, height = 3.5, units = "in")
