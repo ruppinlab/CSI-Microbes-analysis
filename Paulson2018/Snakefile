@@ -71,6 +71,13 @@ rule all:
         #        tax_level=["species"], block="sample", kingdom="Viruses", lfc=0,
         #        method="PathSeq", pvaltype="all", microbe_of_interest="Human_polyomavirus_5"),
 
+rule plot_figure_S3:
+    input:
+        FIGURE_S3A_1,
+        FIGURE_S3A_2,
+        FIGURE_S3B_1,
+        FIGURE_S3B_2
+
 rule plot_figure3A_1:
     input:
         SAMPLE_hFDR_FISHER_MARKERS.format(patient="9245-3", sample="RelapseD565Tumor",
