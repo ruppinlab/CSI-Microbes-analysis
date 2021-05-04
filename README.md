@@ -4,11 +4,7 @@ This repository contains part of the workflows for reproducing the results from 
 
 ## Setting up the environment
 
-<<<<<<< HEAD
 This workflow has minimal computational constraints (the major computational steps are in the CSI-Microbes-identification pipeline). I am able to run these steps locally on my Mac, which has 32G of RAM. With the exception of reproducing figure 5A from Maynard2020, which requires ~30 GB of RAM, the remaining steps can be run with ~10 GB of RAM. For now, this workflow requires that you are on the NIH network (either physically present or connected via the VPN) and have access to the biowulf directory `/data/Robinson-SB/CSI-Microbes-identification` to download the necessary files.
-=======
-This workflow has minimal computational constraints (the major computational steps are in the CSI-Microbes-identification pipeline). I run these steps locally on my Mac with 32G memory without a problem. For now, this workflow requires that you are on the NIH network (either physically present or connected via the VPN) and have access to the biowulf directory `/data/Robinson-SB/CSI-Microbes-identification` to download the necessary files.
->>>>>>> acf1442d0417abf6107ff98ab81b3e816e75a80b
 
 This workflow expects that conda has been installed. For instructions on how to install conda, see [conda install documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
 
@@ -122,7 +118,27 @@ Next, you can generate figure 3 (`output/plots/figure_3A_1.pdf`, `output/plots/f
 snakemake --cores <number of CPUs> plot_figure3
 ```
 
-<!-- ## Reproducing results from Paulson2018 -->
+## Reproducing results from Paulson2018
+
+To reproduce the results from Paulson2018, you first need to be in the `Paulson2018` directory
+
+```
+cd Paulson2018
+```
+
+To reproduce figure S3, you first need to download the PathSeq files using the below command
+
+```
+rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Paulson2018/output/ raw/
+```
+
+
+Next, you can generate figure 3 (`output/plots/figure_S3A_1.pdf`, `output/plots/figure_S3A_2.pdf`, `output/plots/figure_S3B_1.pdf` and `output/plots/figure_S3B_2.pdf`) using the below command
+
+```
+snakemake --cores <number of CPUs> plot_figure_S3
+```
+
 
 ## Reproducing results from Maynard2020
 
