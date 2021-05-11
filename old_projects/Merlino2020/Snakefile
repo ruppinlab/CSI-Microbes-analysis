@@ -1,0 +1,45 @@
+from os.path import join
+import pandas as pd
+
+# wildcard_constraints:
+#     patient="Pt0",
+#     plate="P1|P2|P3|P4"
+
+
+TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+BINOM_MARKERS = join("output", "binomial-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+
+FIGURE_2A = join("output", "figure2a.png")
+# parameters
+SPIKE_PREFIX = "RNA_SPIKE"
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+include: "../rules/plotting.smk"
+rule all:
+    input:
+        # FIGURE1,
+        # expand(DECONV_NORM_PLOT, patient="Pt0", tax_level="genus", method="PathSeq", celltype="status", microbe="Salmonella"),
+        expand(TTEST_MARKERS, patient="mouse1", tax_level="genus", method="PathSeq", celltype=["celltype1", "celltype2"], celltype_of_interest=["Yes", "No"], norm="deconv")
+
+
+
+rule convert_PathSeq_to_read_counts:
+    wildcard_constraints:
+        method="PathSeq"
+    params:
+        join("data", "PathSeq", "{}-{}", "pathseq.txt")
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv",
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA,
+    script:
+        "../src/convert_PathSeq_output_to_read_counts.py"
+
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Merlino2020/identify-microbes-workflow/output/ data/

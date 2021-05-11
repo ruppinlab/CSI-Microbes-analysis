@@ -1,0 +1,62 @@
+from os.path import join, abspath
+import pandas as pd
+
+wildcard_constraints:
+    patient="BT_S1|BT_S2|BT_S4|BT_S6"
+
+patients=["BT_S2", "BT_S4", "BT_S6", "BT_S1"]
+
+EDGER_FORMULA="tissue+selection"
+
+EDGER_RESULTS = join("output", "{tax_level}_edgeR_results_{patient}-{celltype}.tsv")
+TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+BINOM_MARKERS = join("output", "binom-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+include: "../rules/plotting.smk"
+rule all:
+    input:
+        expand(WILCOX_MARKERS, patient=patients, method="PathSeq", celltype="Cell_type", celltype_of_interest="Neoplastic", tax_level="genus", norm="deconv"),
+        expand(WILCOX_MARKERS, patient=patients, method="PathSeq", celltype="neoplastic", celltype_of_interest="Neoplastic", tax_level="genus", norm="deconv"),
+        expand(DECONV_NORM_PLOT, patient="BT_S1", microbe=["Salmonella_enterica"], celltype="batch", method="PathSeq", tax_level=["species"], norm="deconv"),
+        expand(DECONV_NORM_PLOT, patient="BT_S6", microbe=["Botrytis"], celltype="Cell_type", method="PathSeq", tax_level=["genus"], norm="deconv")
+        #expand(PATIENT_BATCH_RANKSUM_RESULT_FILE, tax_level="genus",
+        #       celltype=["Cell_type"], patient=patients,
+    #           batch=["Tumor", "Periphery"]),
+
+
+
+# data processing rules
+
+rule combine_STAR_output:
+    params:
+        join("data", "star", "{}-{}", "_STARpass2", "ReadsPerGene.out.tab")
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv",
+    output:
+        STAR_READCOUNT_TABLE
+    script:
+        "../src/combine_star_read_files.py"
+
+rule convert_PathSeq_to_read_counts:
+    params:
+        join("data", "PathSeq", "{}-{}", "pathseq.txt")
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv"
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA,
+    script:
+        "../src/convert_PathSeq_output_to_read_counts.py"
+
+# download all Kraken files
+# rsync -avc --include='*-sequences.biom' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Darmanis2017/identify-microbes-workflow/output/ data/
+
+# download STAR read count files
+# rsync -avc --include='ReadsPerGene.out.tab' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Darmanis2017/identify-microbes-workflow/output/ data/
+
+# download PathSeq files
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Darmanis2017/identify-microbes-workflow/output/ data/

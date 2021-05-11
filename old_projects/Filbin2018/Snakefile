@@ -1,0 +1,68 @@
+from os.path import join
+import pandas as pd
+
+wildcard_constraints:
+    patient="BCH1126|BCH836|BCH869|MUV1|MUV5|MUV10"
+
+
+patients = ["BCH1126", "BCH836", "MUV5", "MUV1"] # "BCH869" (only one non-malignant cell) # "MUV10" (only malignant and filter cells)
+
+
+
+
+TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+BINOM_MARKERS = join("output", "binomial-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+
+FIGURE_2A = join("output", "figure2a.png")
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+include: "../rules/plotting.smk"
+
+rule all:
+    input:
+        expand(WILCOX_MARKERS, patient=patients, celltype="Tumor", celltype_of_interest="Tumor", tax_level=["genus"], norm="deconv", method="PathSeq"),
+        expand(DECONV_NORM_PLOT, patient="MUV1", celltype="celltype1", tax_level="genus", method="PathSeq", microbe=["Geobacillus", "Aspergillus", "Dolosigranulum", "Mesorhizobium", "Fomitiporia", "Haemophilus", "Proteus"])
+        # FIGURE_2A,
+        # expand(ALL_MICROBE_SPIKEIN_CORR_FILE, tax_level="genus", method="PathSeq"),
+        # expand(PATIENT_MICROBE_SPIKEIN_CORR_FILE, tax_level="genus", method="PathSeq", patient="BC06", celltype="Tumor")
+
+# rule combine_patient_reads:
+#     input:
+#         MICROBE_READ_TABLE,
+#         SAMPLE_METADATA
+#     output:
+#         ALL_PATIENT_MICROBE_READ_TABLE
+#     script:
+#         "src/combine_patient_reads.py"
+
+rule convert_PathSeq_to_read_counts:
+    wildcard_constraints:
+        method="PathSeq"
+    params:
+        join("data", "PathSeq", "{}-{}", "pathseq.txt")
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv"
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "../src/convert_PathSeq_output_to_read_counts.py"
+
+
+# rule combine_filter_metrics:
+#     input:
+#         "data/samples.tsv",
+#     output:
+#         COMBINED_FILTER_METRICS
+#     script:
+#         "../src/combine_filter_metrics.py"
+#
+# rule download_filter_metrics:
+#     shell:
+#         "rsync -avc --include='filter-metrics.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Chung2017/identify-microbes-workflow/output/PathSeq/ filter-metrics/"
+
+# download PathSeq files
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Filbin2018/output/ data/

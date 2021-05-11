@@ -1,0 +1,29 @@
+from os.path import join
+import pandas as pd
+
+units = pd.read_csv("data/units.tsv", sep="\t")
+
+wildcard_constraints:
+    pvaltype="all|any|some",
+    patient="|".join(units["patient"].unique()),
+    sample="|".join(units["sample"].unique()),
+
+include: "../rules/common.smk"
+include: "../rules/analysis-10x.smk"
+
+rule all:
+    input:
+        # expand(PATIENT_MICROBE_READ_TABLE, patient=units["patient"].unique(),
+        #        method="PathSeq", pvaltype="any", kingdom="All", tax_level="superkingdom"),
+        expand(PATIENT_BINOM_MARKERS, patient="HTAPP-735-SMP-3841",
+               celltype="celltype1", celltype_of_interest="Epithelial cell", celltype_comparison="all",
+               tax_level=["genus"], direction=["up"], minprop="0",
+               lfc="0", block="sample",
+               method="PathSeq", pvaltype="any", kingdom="All"),
+        expand(PATIENT_BINOM_MARKERS, patient="HTAPP-735-SMP-3841",
+               celltype="celltype1", celltype_of_interest="Epithelial cell", celltype_comparison="Macrophage",
+               tax_level=["genus"], direction=["up"], minprop="0",
+               lfc="0", block="sample",
+               method="PathSeq", pvaltype="any", kingdom="All"),
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Slyper2020/output/ data/

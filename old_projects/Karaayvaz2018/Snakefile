@@ -1,0 +1,167 @@
+from os.path import join
+import pandas as pd
+
+cells = pd.read_csv("data/units.tsv", sep="\t")
+wildcard_constraints:
+    patient="|".join(cells["patient"].drop_duplicates()),
+    sample="|".join(cells["sample"].drop_duplicates()),
+    plate="|".join(cells["plate"].drop_duplicates()),
+    celltype="Tumor"
+
+patients = ["PT039", "PT058", "PT084", "PT089", "PT126"]
+
+cells = cells.loc[cells.patient.isin(patients)]
+cells = cells.loc[~(cells.plate.isin(["P1", "P121", "P3"]))]
+
+#EDGER_RESULTS = join("output", "{tax_level}_edgeR_{norm_method}_results_{patient}-{celltype}.tsv")
+#TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{norm}.tsv")
+#WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{norm}.tsv")
+#BINOM_MARKERS = join("output", "binom-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+
+# EMPTY_WELLS_META = join("output", "empty-wells-{tax_level}-{method}-metadata.tsv")
+# EMPTY_WELLS_MICROBE_READ_TABLE = join("output", "empty-wells-{tax_level}-{method}-microbe.tsv")
+# EMPTY_WELLS_PLOT = join("output", "empty-wells-{tax_level}-{method}-plot.png")
+#
+# PLATE_MICROBE_READ_TABLE = join("output", "{plate}_{tax_level}_{method}_microbe_reads.tsv")
+# PLATE_SAMPLE_METADATA = join("output", "{plate}_{tax_level}_{method}_metadata.tsv")
+# PLATE_TTEST_MARKERS = join("output", "t-test-{plate}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+# PLATE_WILCOX_MARKERS = join("output", "wilcox-{plate}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+# EMPTY_WELL_BINOMIAL_TEST = join("output", "binomial-test_{plate}_{tax_level}_{method}.tsv")
+
+FILTERED_PATIENT_MICROBE_READ_TABLE = join("output", "{patient}_{tax_level}_{method}_{kingdom}_filtered_reads.tsv")
+FILTERED_BINOM_MARKERS = join("output", "filtered-binomial-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}.tsv")
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+#include: "../rules/plate.smk"
+include: "../rules/plotting.smk"
+
+#BACTERIA_PLATE_TTEST_MARKERS = PLATE_TTEST_MARKERS.format(tax_level="genus", method="PathSeq", kingdom="Bacteria", celltype="Tumor", celltype_of_interest="Tumor", norm="deconv", patient="{patient}", sample="{sample}", plate="{plate}")
+
+rule all:
+    input:
+        "output/species_overlap_with_Straussman.tsv"
+        # expand(PATIENT_WILCOX_MARKERS, patient=patients, tax_level=["species"],
+        #        norm=["deconv"], method="PathSeq", kingdom=["Bacteria"],
+        #        celltype="Tumor", lfc=".5", pvaltype="all",
+        #        block="plate", celltype_of_interest="Tumor"),
+        # expand("output/PathSeq_{kingdom}_{tax_level}_name_taxid_mapping.tsv", kingdom="Bacteria", tax_level="species"),
+        # expand(MICROBE_READ_SWARMPLOT, patient="PT089", method="PathSeq",
+        #        tax_level=["species"], kingdom=["Bacteria"], celltype="celltype1", microbe=["Enterobacter_cloacae", "Enterobacter_cancerogenus"]),
+        #expand(BACTERIA_PLATE_TTEST_MARKERS, zip, patient=cells["patient"], sample=cells["sample"], plate=cells["plate"])
+        # expand(DECONV_NORM_PLOT, patient=patients, celltype=["Tumor", "celltype1"], kingdom="Bacteria", tax_level="genus", method="PathSeq", microbe=["Paeniglutamicibacter"]),
+        # expand(PATIENT_MICROBE_READ_TABLE, patient=patients, method="PathSeq",
+        #        tax_level=["family"], kingdom=["Bacteria"]),
+
+rule calculate_patient_binomial_markers_filtered:
+    input:
+        FILTERED_PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    output:
+        FILTERED_BINOM_MARKERS,
+    script:
+        "../src/run_scran_binomial_marker_analysis.R"
+
+
+rule filter_by_Straussman:
+    input:
+        "data/breast_tumor_hits.tsv",
+        PATIENT_MICROBE_READ_TABLE
+    output:
+        FILTERED_PATIENT_MICROBE_READ_TABLE
+    script:
+        "src/filter_by_Straussman_hits.py"
+
+
+# rule run_binomial_test_for_empty_wells:
+#     input:
+#         PLATE_MICROBE_READ_TABLE,
+#         PLATE_SAMPLE_METADATA
+#     output:
+#         EMPTY_WELL_BINOMIAL_TEST
+#     script:
+#         "src/run_scran_binomial.R"
+#
+# rule identify_empty_wells:
+#     input:
+#         STAR_READCOUNT_TABLE,
+#         "data/samples.tsv",
+#         MICROBE_READ_TABLE
+#     output:
+#         EMPTY_WELLS_META,
+#         EMPTY_WELLS_MICROBE_READ_TABLE,
+#         EMPTY_WELLS_PLOT,
+#     script:
+#         "src/identify_empty_wells.py"
+#
+# rule calculate_markers_by_plate:
+#     wildcard_constraints:
+#         norm="deconv"
+#     input:
+#         PLATE_MICROBE_READ_TABLE,
+#         PLATE_SAMPLE_METADATA
+#     output:
+#         PLATE_TTEST_MARKERS,
+#         PLATE_WILCOX_MARKERS
+#     script:
+#         "../src/run_scran_marker_analysis.R"
+#
+# rule split_by_plate:
+#     input:
+#         MICROBE_READ_TABLE,
+#         SAMPLE_METADATA
+#     output:
+#         PLATE_MICROBE_READ_TABLE,
+#         PLATE_SAMPLE_METADATA
+#     script:
+#         "src/split_read_matrices_by_plate.py"
+
+rule identify_Straussman_overlap:
+    input:
+        "output/PathSeq_{kingdom}_{tax_level}_name_taxid_mapping.tsv".format(kingdom="Bacteria", tax_level="species"),
+        MICROBE_READ_TABLE.format(kingdom="Bacteria", tax_level="species", method="PathSeq"),
+        "../data/microbev1_breast_cancer_hits.tsv"
+    output:
+        "output/species_overlap_with_Straussman.tsv"
+    script:
+        "../src/identify_Straussman_overlap.py"
+
+rule extract_name_tax_id_mapping:
+    params:
+        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv"
+    output:
+        "output/PathSeq_{kingdom}_{tax_level}_name_taxid_mapping.tsv"
+    script:
+        "../src/extract_PathSeq_name_tax_id.py"
+
+# rules for processing the data
+rule convert_PathSeq_to_read_counts:
+    params:
+        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv"
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "../src/convert_PathSeq_output_to_read_counts.py"
+
+rule combine_STAR_output:
+    params:
+        join("data", "star", "{}-{}", "_STARpass2", "ReadsPerGene.out.tab")
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv",
+    output:
+        STAR_READCOUNT_TABLE
+    script:
+        "../src/combine_star_read_files.py"
+
+
+# download STAR read count files
+# rsync -avc --include='ReadsPerGene.out.tab' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Karaayvaz2018/identify-microbes-workflow/output/ data/
+
+# download PathSeq files
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Karaayvaz2018/output/ data/

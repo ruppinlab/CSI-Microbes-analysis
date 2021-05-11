@@ -1,0 +1,45 @@
+from os.path import join
+import pandas as pd
+
+# patients = ['Mel102', 'Mel103', 'Mel105', 'Mel106', 'Mel110', 'Mel112', 'Mel128', 'Mel129pa', 'Mel194', 'Mel98'] # MGH57, 'MGH103', 'MGH61'
+
+EDGER_RESULTS = join("output", "{tax_level}_edgeR_{norm_method}_results_{patient}-{celltype}.tsv")
+TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+BINOM_MARKERS = join("output", "binom-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+#include: "../rules/plate.smk"
+include: "../rules/plotting.smk"
+
+rule all:
+    input:
+        # expand(TTEST_MARKERS, patient="Pt0", celltype="Condition", celltype_of_interest="infected", tax_level=["genus"], method="PathSeq", norm="deconv"),
+        expand(MICROBE_READ_TABLE, method="PathSeq", tax_level=["genus"])
+
+
+
+# rules for processing the data
+rule convert_PathSeq_to_read_counts:
+    params:
+        join("data", "PathSeq", "{}-{}", "pathseq.txt")
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv"
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "src/convert_PathSeq_output_to_read_counts.py"
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Jerby-Arnon2018/identify-microbes-workflow/output/ data/
+
+
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Hayward2019/identify-microbes-workflow/output/ data/

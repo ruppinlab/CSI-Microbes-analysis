@@ -1,0 +1,89 @@
+from os.path import join
+import pandas as pd
+
+cells = pd.read_csv("data/units.tsv", sep="\t")
+wildcard_constraints:
+    patient="|".join(cells["patient"].drop_duplicates()),
+    sample="|".join(cells["sample"].drop_duplicates()),
+    plate="|".join(cells["plate"].drop_duplicates()),
+    celltype="Tumor|celltype1|celltype2"
+
+plates_of_interest = [
+    "HNSCC16_P4", "HNSCC16_P5", "HNSCC16_P7", "HNSCC17_P7",
+    "HNSCC20_P5_pri", "HNSCC22_P4", "HNSCC22_P5", "HN25_P24", "HN25_P25",
+    "HNSCC25_P19_LN", "HNSCC25_P20", "HNSCC25_P22", "HN25_P5", "HNSCC25_P1_pri",
+    "HNSCC25_P2", "HNSCC25_P3", "HNSCC25_P4", "HNSCC26_P23", "HN26_P5", "HN26_P6",
+    "HNSCC26_P3", "HN26_P13", "HN26_P14", "HNSCC26_P12", "HN28_P14", "HN28_P15",
+    "HNSCC28_P12", "HNSCC28_P13", "HN28_P5", "HNSCC5_P14_LN", "HNSCC5_P15",
+    "HNSCC5_P7", "HNSCC5_P9", "HNSCC6_P15_LN", "HNSCC6_P16"
+]
+# for some reason, we are missing "HNSCC18_P7"
+cells = cells.loc[cells.plate.isin(plates_of_interest)]
+# "MEEI16"
+# "MEEI23" - no tumor cells sequenced
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+include: "../rules/plotting.smk"
+include: "../rules/sample_size_analysis.smk"
+
+# BACTERIA_SAMPLE_TTEST_MARKERS = SAMPLE_TTEST_MARKERS.format(tax_level="genus", method="PathSeq", kingdom="Bacteria", celltype="Tumor", celltype_of_interest="Tumor", norm="deconv", patient="{patient}", sample="{sample}")
+# BACTERIA_PLATE_TTEST_MARKERS = PLATE_TTEST_MARKERS.format(tax_level="genus", method="PathSeq", kingdom="Bacteria", celltype="Tumor", celltype_of_interest="Tumor", norm="deconv", patient="{patient}", sample="{sample}", plate="{plate}")
+
+
+rule all:
+    input:
+        expand(MICROBE_READ_SWARMPLOT, tax_level="species", kingdom="Viruses",
+               method="PathSeq", patient=cells["patient"].drop_duplicates(),
+               microbe=["Influenza_A_virus"],
+               celltype="celltype1", norm="deconv"),
+        expand(MICROBE_READ_SWARMPLOT, tax_level="genus", kingdom="Bacteria",
+               method="PathSeq", patient=cells["patient"].drop_duplicates(),
+               microbe=["Streptomyces", "Methylobacterium"],
+               celltype="celltype1", norm="deconv"),
+        # expand(SAMPLE_SIZE_PLOT, patient="MEEI22", tax_level="genus", method="PathSeq", celltype="Tumor",
+        #        celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+        #        norm="deconv", kingdom="Bacteria", pvaltype="all", maxcells=45,
+        #        mincells=20, nsamples=100, microbe="Methylobacterium"),
+        # expand(SAMPLE_SIZE_PLOT, patient="MEEI25", tax_level="genus", method="PathSeq", celltype="Tumor",
+        #        celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+        #        norm="deconv", kingdom="Bacteria", pvaltype="all", maxcells=200,
+        #        mincells=20, nsamples=100, microbe="Streptomyces"),
+        # expand(SAMPLE_SIZE_PLOT, patient="MEEI28", tax_level="genus", method="PathSeq", celltype="Tumor",
+        #        celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+        #        norm="deconv", kingdom="Bacteria", pvaltype="all", maxcells=200,
+        #        mincells=20, nsamples=100, microbe="Streptomyces"),
+        expand(WILCOX_MARKERS, patient="MEEI22", celltype="celltype1", celltype_of_interest="Tumor", tax_level=["species"], norm="deconv", method="PathSeq", kingdom="Bacteria", pvaltype="any"),
+        #expand(DECONV_NORM_PLOT, patient=["MEEI28"], celltype=["celltype1"], tax_level="genus", method="PathSeq", microbe=["Cytomegalovirus"], kingdom="Viruses"),
+        #expand(DECONV_NORM_PLOT, patient=["MEEI25","MEEI26", "MEEI28"], celltype=["sample"], tax_level="genus", method="PathSeq", microbe=["Streptomyces"], kingdom="Bacteria")
+
+
+
+rule convert_PathSeq_to_read_counts:
+    wildcard_constraints:
+        method="PathSeq"
+    params:
+        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv",
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "../src/convert_PathSeq_output_to_read_counts.py"
+
+
+# rule combine_filter_metrics:
+#     input:
+#         "data/samples.tsv",
+#     output:
+#         COMBINED_FILTER_METRICS
+#     script:
+#         "../src/combine_filter_metrics.py"
+#
+# rule download_filter_metrics:
+#     shell:
+#         "rsync -avc --include='filter-metrics.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Chung2017/identify-microbes-workflow/output/PathSeq/ filter-metrics/"
+
+# download PathSeq files
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Puram2017/output/ data/

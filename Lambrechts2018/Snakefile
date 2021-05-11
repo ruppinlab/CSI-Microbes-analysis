@@ -1,0 +1,27 @@
+from os.path import join
+
+wildcard_constraints:
+    pvaltype="all|any|some",
+    patient="3|4|5",
+    sample="[3-5][a-d]",
+    celltype="Tumor|celltype1",
+
+include: "../rules/common.smk"
+include: "../rules/analysis-10x.smk"
+#include: "../rules/hFDR.smk"
+
+
+rule all:
+    input:
+        expand(PATIENT_BINOM_MARKERS, patient=["3", "4", "5"],
+               celltype="Tumor", celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+               tax_level=["class", "order", "family", "genus", "species"],
+               lfc=0, block="sample", direction="any", minprop=0,
+               method="PathSeq", pvaltype="any", kingdom=["All"]),
+        expand(PATIENT_BINOM_MARKERS, patient=["3", "4", "5"],
+               celltype="celltype1", celltype_of_interest="tumor", celltype_comparison="all",
+               tax_level=["class", "order", "family", "genus", "species"],
+               lfc=0, block="sample", direction="any", minprop=0,
+               method="PathSeq", pvaltype="any", kingdom=["All"]),
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lambrechts2018/output/ raw/

@@ -1,0 +1,8 @@
+domain	phylum	class	order	family	genus	species
+Bacteria	Bacteroidetes	Bacteroidia	Bacteroidales	Bacteroidaceae	Bacteroides	Bacteroides dorei
+Bacteria	Firmicutes	Bacilli	Bacillales	Staphylococcaceae	Staphylococcus	Staphylococcus aureus
+Bacteria	Firmicutes	Clostridia	Clostridiales	Lachnospiraceae	Lachnoanaerobaculum	Eubacterium saburreum
+Bacteria	Proteobacteria	Alphaproteobacteria	Rhodobacterales	Rhodobacteraceae	Paracoccus	Paracoccus marcusii
+Bacteria	Proteobacteria	Betaproteobacteria	Neisseriales	Neisseriaceae	Eikenella	Eikenella corrodens
+Bacteria	Proteobacteria	Gammaproteobacteria	Pseudomonadales	Pseudomonadaceae	Pseudomonas	Pseudomonas viridiflava
+Bacteria	Proteobacteria	Gammaproteobacteria	Xanthomonadales	Xanthomonadaceae	Xanthomonas	Xanthomonas arboricola

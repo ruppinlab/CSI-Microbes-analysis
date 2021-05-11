@@ -1,0 +1,90 @@
+from os.path import join
+
+wildcard_constraints:
+    tax_level="root|superkingdom|phylum|class|order|family|genus|species|no_rank",
+    patient="su001|su002|su003|su004|su005|su006|su007|su008|su009|su010|su012|su011|su013|su014",
+    celltype="Tumor|celltype1|celltype2"
+# include: "../rules/common.smk"
+
+MICROBE_READ_TABLE = join("output", "{tax_level}_{method}_microbe_reads.tsv")
+SAMPLE_METADATA = join("output", "{tax_level}_{method}_sample_metadata.tsv")
+PATIENT_MICROBE_READ_TABLE = join("output", "{patient}_{tax_level}_{method}_microbe_reads.tsv")
+PATIENT_SAMPLE_METADATA = join("output", "{patient}_{tax_level}_{method}_metadata.tsv")
+PATIENT_TIMING_MICROBE_READ_TABLE = join("output", "{patient}_{timing}_{tax_level}_{method}_microbe_reads.tsv")
+PATIENT_TIMING_SAMPLE_METADATA = join("output", "{patient}_{timing}_{tax_level}_{method}_metadata.tsv")
+# BINOM_MARKERS = join("output", "{patient}_{tax_level}_{method}_{norm}_binomial_markers.tsv")
+BINOM_PATIENT_MARKERS = join("output", "binomial-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{pvaltype}.tsv")
+BINOM_PATIENT_TIMING_MARKERS = join("output", "binomial-{patient}-{timing}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{pvaltype}.tsv")
+
+patients = ["su001", "su002", "su003", "su004", "su005", "su006", "su007", "su008", "su009", "su010", "su011", "su012", "su013", "su014"]
+# "su009", "su010", "su012", "su011", "su013", "su014" - only CD3+ CD45+ cells
+# "su001" post
+# "su002" post
+# "su005" post
+
+rule all:
+    input:
+        expand(BINOM_PATIENT_TIMING_MARKERS, patient=["su001", "su002", "su003", "su004", "su005", "su006", "su007", "su008"], timing=["pre", "post"], celltype="celltype1", celltype_of_interest="Tcell", tax_level=["genus"], method="PathSeq", pvaltype="some"),
+        expand(BINOM_PATIENT_TIMING_MARKERS, patient=["su012"], timing=["pre"], celltype="celltype1", celltype_of_interest="Tcell", tax_level=["genus"], method="PathSeq", pvaltype="some"),
+        expand(BINOM_PATIENT_TIMING_MARKERS, patient=["su005"], timing=["post"], celltype="celltype1", celltype_of_interest="Plasma_cells", tax_level=["genus", "species"], method="PathSeq", pvaltype="some"),
+
+rule Tumor_DA_microbes:
+    input:
+        expand(BINOM_PATIENT_TIMING_MARKERS, patient=["su001", "su002", "su005"], timing=["pre"], celltype="Tumor", celltype_of_interest="Tumor", tax_level=["genus"], method="PathSeq", pvaltype="some"),
+        expand(BINOM_PATIENT_TIMING_MARKERS, patient=["su004"], timing=["post"], celltype="Tumor", celltype_of_interest="Tumor", tax_level=["genus"], method="PathSeq", pvaltype="some"),
+        expand(BINOM_PATIENT_TIMING_MARKERS, patient=["su003", "su006", "su007", "su008"], timing=["pre", "post"], celltype="Tumor", celltype_of_interest="Tumor", tax_level=["genus"], method="PathSeq", pvaltype="some")
+
+
+rule calculate_patient_markers:
+    input:
+        PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    output:
+        BINOM_PATIENT_MARKERS
+    script:
+        "../src/run_scran_binomial_marker_analysis.R"
+
+rule calculate_patient_timing_markers:
+    input:
+        PATIENT_TIMING_MICROBE_READ_TABLE,
+        PATIENT_TIMING_SAMPLE_METADATA
+    output:
+        BINOM_PATIENT_TIMING_MARKERS
+    script:
+        "../src/run_scran_binomial_marker_analysis.R"
+
+rule filter_read_table_by_patient:
+    input:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    output:
+        PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    script:
+        "../src/split_read_matrices_by_patient.py"
+
+rule filter_patient_read_table_by_time:
+    input:
+        PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    output:
+        PATIENT_TIMING_MICROBE_READ_TABLE,
+        PATIENT_TIMING_SAMPLE_METADATA
+    script:
+        "src/split_patient_read_matrices_by_timing.py"
+
+rule convert_PathSeq_to_readcounts:
+    wildcard_constraints:
+        method="PathSeq"
+    params:
+        join("data", "PathSeq", "{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv"
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "src/convert_PathSeq_output_to_read_counts.py"
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Yost2019/output/ data/

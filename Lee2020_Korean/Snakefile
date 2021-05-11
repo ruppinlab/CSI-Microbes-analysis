@@ -1,0 +1,41 @@
+from os.path import join
+import pandas as pd
+
+cells = pd.read_csv("data/units.tsv", sep="\t")
+samples = pd.read_csv("data/samples.tsv", sep="\t")
+
+cells = cells.loc[cells["sample"].isin(samples["sample"])]
+
+wildcard_constraints:
+    celltype="Tumor|celltype1",
+    patient="|".join(cells["patient"].unique())
+
+include: "../rules/common.smk"
+include: "../rules/analysis-10x.smk"
+
+
+
+patients = cells["patient"].unique()
+samples = cells[["patient", "sample"]].drop_duplicates()
+
+# exclude "SC001" for now - no tumors cells processed
+rule all:
+    input:
+        expand(PATIENT_BINOM_MARKERS, patient=patients,
+               celltype="Tumor", celltype_of_interest="Tumor", celltype_comparison="nonTumor",
+               tax_level=["phylum", "class", "order", "family", "genus", "species"],
+               lfc=0, block="sample", direction=["any"], minprop="0",
+               method="PathSeq", pvaltype="any", kingdom=["All"]),
+        # expand(PATIENT_BINOM_MARKERS, patient="SMC24",
+        #        celltype="celltype1", celltype_of_interest="Stromal", celltype_comparison="all",
+        #        tax_level=["genus"],
+        #        lfc=0, block="sample", direction=["any"], minprop="0",
+        #        method="PathSeq", pvaltype="any", kingdom=["All"]),
+
+
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lee2020_Korean/output/ raw/
+# rsync -avc --include='*-scores.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lee2020_Korean/output/ raw/
+# rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lee2020_Korean/ raw/

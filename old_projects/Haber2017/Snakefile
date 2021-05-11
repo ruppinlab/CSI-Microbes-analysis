@@ -1,0 +1,25 @@
+from os.path import join
+import pandas as pd
+
+patients = pd.read_csv("data/patients.tsv", sep="\t")
+samples = pd.read_csv("data/samples.tsv", sep="\t")
+samples = samples.merge(patients, on="patient").drop_duplicates()
+scPathSeq_File = join("data", "PathSeq", "{patient}-{sample}", "pathseq.txt")
+reads_across_conditions_plot = join("output", "reads.tsv")
+
+rule all:
+    input:
+        reads_across_conditions_plot
+
+rule analyze_PathSeq_output:
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv",
+    output:
+        reads_across_conditions_plot
+    script:
+        "src/analyze_PathSeq_output.py"
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' biowulf:/data/Robinson-SB/scRNA-seq-microbe-identification/Bian2018/identify-microbes-workflow/output/ data/

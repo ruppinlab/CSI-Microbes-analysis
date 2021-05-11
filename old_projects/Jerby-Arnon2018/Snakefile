@@ -1,0 +1,219 @@
+from os.path import join
+import pandas as pd
+
+cells = pd.read_csv("data/units.tsv", sep="\t")
+
+wildcard_constraints:
+    patient="|".join(cells["patient"].drop_duplicates()),
+    sample="|".join(cells["sample"].drop_duplicates()),
+    plate="|".join(cells["plate"].drop_duplicates()),
+    celltype="Tumor"
+
+
+patients = ['Mel102', 'Mel103', 'Mel105', 'Mel106', 'Mel110', 'Mel112', 'Mel129', 'Mel194'] # MGH57, 'MGH103', 'MGH61'
+
+# TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+# WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+# BINOM_MARKERS = join("output", "binom-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}.tsv")
+
+TTEST_MARKERS_BTW_PLATES = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{norm}-{tumor_plate}-{nontumor_plate}.tsv")
+WILCOX_MARKERS_BTW_PLATES = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{norm}-{tumor_plate}-{nontumor_plate}.tsv")
+
+COMBINED_WILCOX_MARKERS = join("output", "combined-wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{norm}.tsv")
+
+FIGURE2C = join("output", "figure2c.png")
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+include: "../rules/plotting.smk"
+
+FILTERED_PATIENT_MICROBE_READ_TABLE = join("output", "{patient}_{tax_level}_{method}_{kingdom}_filtered_reads.tsv")
+FILTERED_BINOM_MARKERS = join("output", "filtered-binomial-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}.tsv")
+
+
+rule all:
+    input:
+        expand(FILTERED_BINOM_MARKERS, tax_level="species", kingdom="Bacteria", method="PathSeq", patient=patients, celltype="celltype1", celltype_of_interest="Macrophage", pvaltype="any", lfc=0)
+
+rule calculate_patient_binomial_markers_filtered:
+    input:
+        FILTERED_PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    output:
+        FILTERED_BINOM_MARKERS,
+    script:
+        "../src/run_scran_binomial_marker_analysis.R"
+
+
+rule filter_by_Straussman:
+    input:
+        "data/melanoma_hits.tsv",
+        PATIENT_MICROBE_READ_TABLE
+    output:
+        FILTERED_PATIENT_MICROBE_READ_TABLE
+    script:
+        "../src/filter_by_Straussman_hits.py"
+
+
+
+# rule plot_figure2c:
+#     input:
+#         PATIENT_MICROBE_READ_TABLE.format(method="PathSeq", tax_level="genus", kingdom="Bacteria", patient="Mel129pa"),
+#         PATIENT_SAMPLE_METADATA.format(method="PathSeq", tax_level="genus", kingdom="Bacteria", patient="Mel129pa"),
+#         PATIENT_MICROBE_READ_TABLE.format(method="PathSeq", tax_level="species", kingdom="Fungi", patient="Mel106"),
+#         PATIENT_SAMPLE_METADATA.format(method="PathSeq", tax_level="species", kingdom="Fungi", patient="Mel106")
+#     output:
+#         FIGURE2C
+#     script:
+#         "src/plot_figure2c.R"
+#
+#
+rule combine_Mel102_results:
+    wildcard_constraints:
+        patient="Mel102"
+    input:
+        expand(WILCOX_MARKERS_BTW_PLATES, patient="{patient}", kingdom="{kingdom}",
+               tumor_plate=["CD45neg_CD90neg_P0", "CD45neg_CD90neg_P3"],
+               nontumor_plate=["CD45pos_P1", "CD45pos_P2"], method="{method}",
+               celltype_of_interest="{celltype_of_interest}", celltype="{celltype}",
+               tax_level="{tax_level}", norm="{norm}")
+    output:
+        COMBINED_WILCOX_MARKERS
+    script:
+        "src/combine_plate_tests.py"
+
+rule combine_Mel103_results:
+    wildcard_constraints:
+        patient="Mel103"
+    input:
+        expand(WILCOX_MARKERS_BTW_PLATES, patient="{patient}", kingdom="{kingdom}",
+               tumor_plate=["CD45neg_CD90neg_P0", "CD45neg_CD90neg_P1"],
+               nontumor_plate=["CD45pos_P1", "CD45pos_P2"], method="{method}",
+               celltype_of_interest="{celltype_of_interest}", celltype="{celltype}",
+               tax_level="{tax_level}", norm="{norm}")
+    output:
+        COMBINED_WILCOX_MARKERS
+    script:
+        "src/combine_plate_tests.py"
+
+rule combine_Mel105_results:
+    wildcard_constraints:
+        patient="Mel105"
+    input:
+        expand(WILCOX_MARKERS_BTW_PLATES, patient="{patient}", kingdom="{kingdom}",
+               tumor_plate=["CD45neg_P2", "Zombineg_CD45neg_CD90neg_P1"],
+               nontumor_plate=["CD45pos_P2", "CD45pos_calceinpos_P0"], method="{method}",
+               celltype_of_interest="{celltype_of_interest}", celltype="{celltype}",
+               tax_level="{tax_level}", norm="{norm}")
+    output:
+        COMBINED_WILCOX_MARKERS
+    script:
+        "src/combine_plate_tests.py"
+
+rule combine_Mel106_results:
+    wildcard_constraints:
+        patient="Mel106"
+    input:
+        expand(WILCOX_MARKERS_BTW_PLATES, patient="{patient}", kingdom="{kingdom}",
+               tumor_plate=["CD45neg_CD90neg_P3", "CD45neg_P3"],
+               nontumor_plate=["CD45pos_P2", "CD45pos_P3"], method="{method}",
+               celltype_of_interest="{celltype_of_interest}", celltype="{celltype}",
+               tax_level="{tax_level}", norm="{norm}")
+    output:
+        COMBINED_WILCOX_MARKERS
+    script:
+        "src/combine_plate_tests.py"
+
+rule combine_Mel110_results:
+    wildcard_constraints:
+        patient="Mel110"
+    input:
+        expand(WILCOX_MARKERS_BTW_PLATES, patient="{patient}", kingdom="{kingdom}",
+               tumor_plate=["CD45neg_CD90neg_P0", "CD45neg_CD90neg_P1", "CD45neg_CD90neg_P2"],
+               nontumor_plate=["CD45pos_P2", "CD45pos_P3"], method="{method}",
+               celltype_of_interest="{celltype_of_interest}", celltype="{celltype}",
+               tax_level="{tax_level}", norm="{norm}")
+    output:
+        COMBINED_WILCOX_MARKERS
+    script:
+        "src/combine_plate_tests.py"
+
+rule combine_Mel112_results:
+    wildcard_constraints:
+        patient="Mel112"
+    input:
+        expand(WILCOX_MARKERS_BTW_PLATES, patient="{patient}", kingdom="{kingdom}",
+               tumor_plate=["CD45neg_CD90neg_P1", "CD45neg_CD90neg_P3"],
+               nontumor_plate=["CD45pos_P0", "CD45pos_P3"], method="{method}",
+               celltype_of_interest="{celltype_of_interest}", celltype="{celltype}",
+               tax_level="{tax_level}", norm="{norm}")
+    output:
+        COMBINED_WILCOX_MARKERS
+    script:
+        "src/combine_plate_tests.py"
+
+rule combine_Mel129pa_results:
+    wildcard_constraints:
+        patient="Mel129"
+    input:
+        expand(WILCOX_MARKERS_BTW_PLATES, patient="{patient}",  kingdom="{kingdom}",
+               tumor_plate=["CD45negCD90neg_P0", "CD45neg_CD90neg_P1"],
+               nontumor_plate=["CD45pos_P0"], method="{method}",
+               celltype_of_interest="{celltype_of_interest}", celltype="{celltype}",
+               tax_level="{tax_level}", norm="{norm}")
+    output:
+        COMBINED_WILCOX_MARKERS
+    script:
+        "src/combine_plate_tests.py"
+
+rule combine_Mel194_results:
+    wildcard_constraints:
+        patient="Mel194"
+    input:
+        expand(WILCOX_MARKERS_BTW_PLATES, patient="{patient}", kingdom="{kingdom}",
+               tumor_plate=["CD45neg_EPCAMpos_pl4_P1", "cd45negcd90neg_PL3_P2"],
+               nontumor_plate=["CD45pos_pl4_P0", "cd45pos_PL3_P3"], method="{method}",
+               celltype_of_interest="{celltype_of_interest}", celltype="{celltype}",
+               tax_level="{tax_level}", norm="{norm}")
+    output:
+        COMBINED_WILCOX_MARKERS
+    script:
+        "src/combine_plate_tests.py"
+
+rule calculate_markers_between_plates:
+    wildcard_constraints:
+        norm="deconv"
+    input:
+        PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    output:
+        TTEST_MARKERS_BTW_PLATES,
+        WILCOX_MARKERS_BTW_PLATES
+    script:
+        "src/run_scran_marker_analysis_plate.R"
+
+# rule split_by_plate:
+#     input:
+#         PATIENT_MICROBE_READ_TABLE,
+#         PATIENT_SAMPLE_METADATA
+#     output:
+#         PATIENT_PLATE_MICROBE_READ_TABLE,
+#         PATIENT_PLATE_SAMPLE_METADATA
+#     script:
+#         ""
+
+# rules for processing the data
+rule convert_PathSeq_to_read_counts:
+    params:
+        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv",
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "../src/convert_PathSeq_output_to_read_counts.py"
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Jerby-Arnon2018/output/ data/

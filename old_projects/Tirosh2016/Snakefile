@@ -1,0 +1,45 @@
+from os.path import join
+import pandas as pd
+
+cells = pd.read_csv("data/units.tsv", sep="\t")
+
+wildcard_constraints:
+    patient="|".join(cells["patient"].drop_duplicates()),
+    sample="|".join(cells["sample"].drop_duplicates()),
+    plate="|".join(cells["plate"].drop_duplicates()),
+    celltype="Tumor"
+
+plates_of_interest = [
+    "cy53_1_CD45_neg", "Cy71_CD45", "CY80_neg", "cy80_CD45_neg",
+    "Cy81_Bulk_CD45", "Cy81_FNA_CD45", "cy82_CD45_pos_1", "cy82_CD45_pos_2",
+    "cy82_CD45_pos_3", "cy94_cd45neg_cd90pos"
+] # removed - "Cy80_II_CD45"
+
+cells = cells.loc[cells.plate.isin(plates_of_interest)]
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+include: "../rules/plotting.smk"
+
+rule all:
+    input:
+        expand(PLATE_WILCOX_MARKERS, patient="Melanoma_80", sample="Melanoma_80", plate="cy80_CD45_neg",
+               celltype="Tumor", celltype_of_interest="Tumor", tax_level="genus",
+               norm="deconv", method="PathSeq", kingdom="Bacteria")
+
+
+# rules for processing the data
+rule convert_PathSeq_to_read_counts:
+    params:
+        join("data", "PathSeq", "{}-{}-{}-{}", "pathseq.txt")
+    input:
+        "data/units.tsv",
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "../src/convert_PathSeq_output_to_read_counts.py"
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Tirosh2016/output/ data/

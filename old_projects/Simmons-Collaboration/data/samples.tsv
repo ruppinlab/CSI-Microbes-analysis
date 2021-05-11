@@ -1,0 +1,13 @@
+patient	sample	lane	disease	cellsort
+S53	S53	S7_L004	Healthy	Myeloid
+S53	S53	S4_L001	Healthy	Myeloid
+S53	S53	S21_L002	Healthy	Myeloid
+S57	S57	S11_L004	Inflamed	Myeloid
+S57	S57	S8_L001	Inflamed	Myeloid
+S57	S57	S25_L002	Inflamed	Myeloid
+S61	S61	S15_L004	Healthy	Myeloid
+S61	S61	S12_L001	Healthy	Myeloid
+S61	S61	S29_L002	Healthy	Myeloid
+S65	S65	S19_L004	Inflamed	Myeloid
+S65	S65	S16_L001	Inflamed	Myeloid
+S65	S65	S33_L002	Inflamed	Myeloid

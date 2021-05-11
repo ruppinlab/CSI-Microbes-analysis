@@ -1,0 +1,102 @@
+from os.path import join
+import pandas as pd
+
+wildcard_constraints:
+    patient="P0104|P0411|P0413|P0720|P0728|P0825|P1212|P1228"
+
+
+patients = ["P0104", "P0411", "P0413", "P0720", "P0728", "P0825", "P1212"]
+# exclude P1228 because only three tumor cells
+patients = ["P0411", "P0413", "P1212"]
+TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{norm}-{pvaltype}.tsv")
+WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{kingdom}-{method}-{norm}-{pvaltype}.tsv")
+STAR_READCOUNT_TABLE = join("output", "STAR-readcount.tsv")
+
+PATIENT_HUMAN_MICROBE_READ_TABLE = join("output", "{patient}_human_{kingdom}_{tax_level}_{method}_reads.tsv")
+
+TTEST_SPIKE_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}.tsv")
+WILCOX_SPIKE_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}.tsv")
+
+
+SPIKE_PREFIX="ERCC"
+
+include: "../rules/common.smk"
+include: "../rules/stats.smk"
+include: "../rules/plotting.smk"
+
+
+rule all:
+    input:
+        #STAR_READCOUNT_TABLE,
+        # expand(TTEST_SPIKE_MARKERS, tax_level=["superkingdom"], kingdom="Bacteria",
+        #        method="PathSeq", patient=patients, celltype="celltype1", lfc="0",
+        #        celltype_of_interest="Malignant", norm="spike", pvaltype="all"),
+        expand(TTEST_SPIKE_MARKERS, tax_level=["genus", "species"], kingdom="Bacteria",
+               method="PathSeq", patient=patients, celltype="celltype1", lfc=1,
+               celltype_of_interest="Malignant", norm="spike", pvaltype="all"),
+        expand(TTEST_MARKERS, tax_level=["genus", "species"], kingdom="Bacteria",
+               method="PathSeq", patient=patients, celltype="celltype1", lfc=1,
+               celltype_of_interest="Malignant", norm="deconv", pvaltype="all"),
+
+rule identify_DA:
+    wildcard_constraints:
+        norm="spike"
+    params:
+        spike=SPIKE_PREFIX
+    input:
+        PATIENT_HUMAN_MICROBE_READ_TABLE,
+        PATIENT_SAMPLE_METADATA
+    output:
+        TTEST_SPIKE_MARKERS,
+        WILCOX_SPIKE_MARKERS,
+    script:
+        "../Aulicino2018/src/run_scran_spikein_marker_analysis.R"
+
+# figure 1 consists of figure 1a and figure 1b
+# figure 1a - comparison of infected vs. exposed vs. uninfected
+# figure 1b - table of results from CSI-Microbes test
+# rule plot_fig1:
+#     input:
+#         PATIENT_MICROBE_READ_TABLE.format(patient="Pt0", method="PathSeq", tax_level="genus", kingdom="Bacteria"),
+#         PATIENT_SAMPLE_METADATA.format(patient="Pt0", method="PathSeq", tax_level="genus", kingdom="Bacteria"),
+#     output:
+#         FIGURE1
+#     script:
+#         "src/plot_figure1.R"
+
+rule combine_microbial_human_reads:
+    input:
+        STAR_READCOUNT_TABLE,
+        PATIENT_MICROBE_READ_TABLE
+    output:
+        PATIENT_HUMAN_MICROBE_READ_TABLE
+    script:
+        "../Aulicino2018/src/combine_microbial_human_reads.py"
+
+
+
+# rules for processing the data
+rule convert_PathSeq_to_read_counts:
+    params:
+        join("data", "PathSeq", "{}-{}", "pathseq.txt")
+    input:
+        "data/samples.tsv",
+    output:
+        MICROBE_READ_TABLE,
+        SAMPLE_METADATA
+    script:
+        "src/convert_PathSeq_output_to_readcounts.py"
+
+rule combine_STAR_output:
+    params:
+        "data/STAR/{}-{}.ReadsPerGene.out.tab"
+    input:
+        "data/patients.tsv",
+        "data/samples.tsv",
+    output:
+        STAR_READCOUNT_TABLE
+    script:
+        "../src/combine_star_read_files.py"
+
+# download PathSeq files
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/scRNA-seq-microbe-identification/Zhang2020/output/ data/
