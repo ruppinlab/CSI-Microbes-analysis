@@ -31,7 +31,7 @@ non.monocyte.percentage <- non.monocyte.positive/non.monocyte.total
 
 mat <- matrix(c(monocyte.positive, non.monocyte.positive, monocyte.total, non.monocyte.total), nrow=2, ncol=2, byrow=TRUE)
 f.test <- fisher.test(mat)
-print(f.test)
+#print(f.test)
 #print(monocyte.percentage)
 #print(non.monocyte.percentage)
 df <- data.frame(celltype=c("monocytes", "non-monocytes"), percentage=c(monocyte.percentage, non.monocyte.percentage))

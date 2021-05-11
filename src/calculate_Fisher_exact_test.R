@@ -31,8 +31,8 @@ celltype.comparison <- snakemake@wildcards[["celltype_comparison"]]
 # first let's remove any rows without at least five cells with the taxa present
 counts <- counts[rowSums(counts > 0) >= 5,]
 # celltype.comparison <- "nonMonocyte"
-print(dim(counts))
-print(class(counts))
+#print(dim(counts))
+#print(class(counts))
 # if there are no reads, then write empty data.frame
 if (nrow(counts) == 0){
   print("There are no reads at all. Writing empty data.frame")
@@ -42,7 +42,7 @@ if (nrow(counts) == 0){
 }
 
 sce <- SingleCellExperiment(assays = list(counts = as.matrix(counts)), colData=pdata)
-print(sce)
+#print(sce)
 min.proportion <- as.numeric(snakemake@wildcards[["minprop"]])
 
 # get the proportion of cells with count > 0 for all possible combinations of cell group and gene
@@ -52,7 +52,7 @@ propOver0byGroup <- apply(
   function(x){
   tapply(x, sce[[celltype.col]], function(x){sum(x > 0) / length(x)})
 })
-print(propOver0byGroup)
+#print(propOver0byGroup)
 if (length(unique(sce[[celltype.col]])) == 1){
   propOver0byGroup <- t(as.matrix(propOver0byGroup))
   rownames(propOver0byGroup) <- unique(sce[[celltype.col]])
@@ -94,10 +94,10 @@ if (nrow(assays(sce)$counts) == 0){
 
 out <- sapply(rownames(sce), calculate.Fishers.exact)
 df <- as.data.frame(t(out))
-print(df)
-print(rownames(df))
-print(tax.map)
+#print(df)
+#print(rownames(df))
+#print(tax.map)
 #tax.map$tax_id <- sapply(tax.map$tax_id, toString)
 df$taxa <- sapply(rownames(df), function(x) tax.map[tax.map$tax_id == x, "name"])
-print(df)
+#print(df)
 write.table(df, file=snakemake@output[[1]], sep="\t")

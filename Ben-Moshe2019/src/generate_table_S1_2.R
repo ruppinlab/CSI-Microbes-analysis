@@ -13,7 +13,7 @@ phylum.df <- read.table(snakemake@input[[6]], header=TRUE)
 phylum.df$tax_level <- "phylum"
 
 df <- do.call(rbind, list(species.df, genus.df, family.df, order.df, class.df, phylum.df))
-print(df)
+#print(df)
 df$tax_id <- row.names(df)
 row.names(df) <- df$taxa
 df$taxa <- NULL

@@ -43,8 +43,8 @@ comparison.positive <- sum(counts(sce[,celltype == celltype.comparison])[microbe
 comparison.total <- dim(sce[,celltype == celltype.comparison])[[2]]
 ci.percentage <- ci.positive/ci.total
 comparison.percentage <- comparison.positive/comparison.total
-print(ci.percentage)
-print(comparison.percentage)
+#print(ci.percentage)
+#print(comparison.percentage)
 df <- data.frame(celltype=c(celltype.comparison, celltype.of.interest), percentage=c(comparison.percentage, ci.percentage))
 df$celltype <- factor(df$celltype, levels=c("nonMonocyte", "Monocyte"))
 #data <- data.frame(group1=c(celltype.of.interest), group2=c(celltype.comparison), p=round(ci.binom[microbe.of.interest, "p.value"], digits=4), y.position=max(ci.percentage, comparison.percentage)*1.1)#

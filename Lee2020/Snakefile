@@ -67,7 +67,7 @@ rule all:
                                           method="PathSeq", kingdom="Bacteria", minprop=0.01),
 
 
-rule plot_figure3:
+rule plot_figure_3:
     input:
         FIGURE3A_1,
         FIGURE3A_2,
