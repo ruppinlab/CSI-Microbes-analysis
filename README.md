@@ -1,18 +1,23 @@
 # CSI-Microbes-analysis
 
-This repository contains part of the workflows for reproducing the results from the bioarxiv paper [Identifying the Landscape of Intratumoral Microbes via a Single Cell Transcriptomic Analysis](https://www.biorxiv.org/content/10.1101/2020.05.14.096230v1) by Welles Robinson, Fiorella Schischlik, Michael Gertz, Alejandro Schaffer and Eytan Ruppin.  This repository contains the workflows to analyze microbial reads from 10x and Smart-seq2 scRNA-seq datasets to identify microbial taxa that are differentially abundant or differentially present. Prior to running this code, these microbial reads must be identified using the [CSI-Microbes-identification repository](https://github.com/ruppinlab/CSI-Microbes-identification). The code in this repository was written by Welles Robinson and alpha-tested by Alejandro Schaffer.
+This repository contains part of the workflows for reproducing the results from the bioarxiv paper [Identifying the Landscape of Intratumoral Microbes via a Single Cell Transcriptomic Analysis](https://www.biorxiv.org/content/10.1101/2020.05.14.096230v1) by Welles Robinson, Fiorella Schischlik, Michael Gertz, Alejandro Schaffer and Eytan Ruppin.  This repository contains the workflows to analyze microbial reads from 10x and Smart-seq2 scRNA-seq datasets to identify microbial taxa that are differentially abundant or differentially present. Prior to running this code, these microbial reads must be identified using the [CSI-Microbes-identification repository](https://github.com/ruppinlab/CSI-Microbes-identification). The code in this repository was written by Welles Robinson and Fio Schischlik and alpha-tested by Alejandro Schaffer.
 
-## Setting up the environment
+## Requirements
 
-This workflow expects that conda has been installed. For instructions on how to install conda, see [conda install documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
+This workflow has been tested on Mac OS Mojave (10.14.6) and the Linux OS (biowulf). The minimum memory requirements are 10 GB for all steps except for figure 5A, which requires 30 GB of RAM. This workflow expects that conda has been installed. For instructions on how to install conda, see [conda install documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
 
-Next, the GitHub repository needs to be cloned as below. The below instructions assume that you have an ssh key associated with your GitHub account. If you do not, you can generate a new ssh key and associate it with your GitHub username by following [these instructions](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
+## Software Installation
+
+It should take < 15 minutes to install the software, which involves downloading the codebase and setting up the environment. There are two ways to download the codebase. To reproduce the key results from our paper, it is recommended to download the zipped version of CSI-Microbes-analysis v0.2.0 from Zenodo (XXX), which contains the intermediate files. The intermediate files are generated using [CSI-Microbes-identification](https://github.com/ruppinlab/CSI-Microbes-identification). The intermediate files for a given dataset are located in the `<dataset_of_interest>/raw` directory. For example, the intermediate files needed to reproduce Aulicino2018 are in `Aulicino2018/raw`).
+
+The second way to download the codebase is to clone the GitHub repository as shown below (which does not contain the intermediate files). The below instructions assume that you have an ssh key associated with your GitHub account. If you do not, you can generate a new ssh key and associate it with your GitHub username by following [these instructions](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
 
 ```
 git clone git@github.com:ruppinlab/CSI-Microbes-analysis.git
 ```
 
-Next, you need to create the conda environment (you need to perform this step only once unless you explicitly delete the conda environment).
+
+Once the codebase is downloaded, you need to create the conda environment (you need to perform this step only once unless you explicitly delete the conda environment).
 
 ```
 cd CSI-Microbes-analysis
@@ -25,20 +30,15 @@ Finally, you need to activate the recently created conda environment (all of the
 conda activate CSI-Microbes-env
 ```
 
-## Requirements
-
-This workflow has minimal computational constraints (the major computational steps are in the CSI-Microbes-identification pipeline). I am able to run these steps locally on my Mac, which has 32G of RAM. With the exception of reproducing figure 5A from Maynard2020, which requires ~30 GB of RAM, the remaining steps can be run with ~10 GB of RAM. For now, this workflow requires that you are on the NIH network (either physically present or connected via the VPN) and have access to the biowulf directory `/data/Robinson-SB/CSI-Microbes-identification` to download the necessary files.
-
-
 ## Software Dependencies
 
 CSI-Microbes-analysis depends on the following software packages that are installed via the conda channels conda-forge, bioconda and defaults: anytree (2.8.0)<sup>[REF](#anytree)</sup>, dplyr (1.0.5)<sup>[REF](#dplyr)</sup>, ggforce (0.3.3)<sup>[REF](#ggforce)</sup>, ggplot2 (3.3.3)<sup>[REF](#ggplot2)</sup>, ggpubr (0.4.0)<sup>[REF](#ggpubr)</sup>, rpy2 (3.4.4)<sup>[REF](#rpy2)</sup>, scater (1.16.0) <sup>[REF](#scater)</sup>, scran (1.16.0) <sup>[REF](#scran)</sup>, SingleCellExperiment (1.10.1)<sup>[REF](#SingleCellExperiment)</sup>, Snakemake (6.2.1)<sup>[REF](#Snakemake)</sup>, structSSI (1.1.1)<sup>[REF](#structSSI)</sup> and Seurat (4.0.1)<sup>[REF](#Seurat)</sup>.
 
 ## Reproducing key results and figures from the paper
 
-The reproduction of key results and figures from the paper requires intermediate files generated by [CSI-Microbes-identification](https://github.com/ruppinlab/CSI-Microbes-identification). To facilitate reproducibility, we have uploaded CSI-Microbes-analysis v0.2.0 with the intermediate files in the `<dataset_of_interest>/raw` directory (ex. the intermediate files needed to reproduce Aulicino2018 are in `Aulicino2018/raw`) to Zenodo.
+The reproduction of key results and figures from the paper requires intermediate files generated by [CSI-Microbes-identification](https://github.com/ruppinlab/CSI-Microbes-identification) and available for download from Zenodo.
 
-## Reproducing results from Aulicino2018
+### Reproducing results from Aulicino2018
 
 To reproduce the results from Aulicino2018<sup>[REF](#Aulicino2018)</sup>, you first need to be in the `Aulicino2018` directory.
 
@@ -56,7 +56,7 @@ rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robin
 rsync -avc --include='*-paired-count.gff' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Aulicino2018/output/ raw/
 ```
 -->
-### Reproducing Figure 2A
+#### Reproducing Figure 2A
 
 To generate figure 2A (`output/plots/figure_2A_1.pdf` and `output/plots/figure_2A_2.pdf`) use the below command
 
@@ -64,7 +64,7 @@ To generate figure 2A (`output/plots/figure_2A_1.pdf` and `output/plots/figure_2
 snakemake --cores <number of CPUs> plot_figure_2A
 ```
 
-### Reproducing Figure S1
+#### Reproducing Figure S1
 
 To generate supplementary figure 1 (`output/plots/figure_S1A.pdf`, `output/plots/figure_S1B.pdf`, `output/plots/figure_S1C.pdf`) use the below command
 
@@ -72,7 +72,7 @@ To generate supplementary figure 1 (`output/plots/figure_S1A.pdf`, `output/plots
 snakemake --cores <number of CPUs> -s SRPRISM-analysis.smk plot_figure_S1
 ```
 
-## Reproducing results from Ben-Moshe2019
+### Reproducing results from Ben-Moshe2019
 
 To reproduce the results from Ben-Moshe2019<sup>[REF](#BenMoshe2019)</sup>, you first need to be in the `Ben-Moshe2019` directory.
 
@@ -87,7 +87,7 @@ rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robi
 rsync -avc --include='CB-UMI-count-SL1344.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ raw/
 ```
 -->
-### Reproducing Figure 2B
+#### Reproducing Figure 2B
 
 Next, you can generate figure 2B (`output/plots/figure_2B_1.pdf` and `output/plots/figure_2B_2.pdf`) using the below command
 
@@ -95,7 +95,7 @@ Next, you can generate figure 2B (`output/plots/figure_2B_1.pdf` and `output/plo
 snakemake --cores <number of CPUs> plot_figure_2B
 ```
 
-### Reproducing Figure S2
+#### Reproducing Figure S2
 
 Next, you can generate supplementary figure 2 (`output/plots/figure_S2.pdf`) using the below command
 
@@ -104,7 +104,7 @@ snakemake --cores <number of CPUs> -s SRPRISM-analysis.smk plot_figure_S2
 ```
 
 
-## Reproducing results from Lee2020
+### Reproducing results from Lee2020
 
 To reproduce the results from Lee2020<sup>[REF](#Lee2020)</sup>, you first need to be in the `Lee2020` directory
 
@@ -125,7 +125,7 @@ Next, you can generate figure 3 (`output/plots/figure_3A_1.pdf`, `output/plots/f
 snakemake --cores <number of CPUs> plot_figure_3
 ```
 
-## Reproducing results from Paulson2018
+### Reproducing results from Paulson2018
 
 To reproduce the results from Paulson2018<sup>[REF](#Paulson2018)</sup>, you first need to be in the `Paulson2018` directory
 
@@ -140,14 +140,14 @@ rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robi
 ```
 -->
 
-Next, you can generate supplementary figure 3 (`output/plots/figure_S3A_1.pdf`, `output/plots/figure_S3A_2.pdf`, `output/plots/figure_S3B_1.pdf` and `output/plots/figure_S3B_2.pdf`) using the below command
+Next, you can generate supplementary figure 3 (`output/plots/figure_S3A_1.pdf`, `output/plots/figure_S3A_2.pdf`, `output/plots/figure_S3B_1.pdf` and `output/plots/figure_S3B_2.pdf`) using the below command. This command will generating some warning messages that it cannot find certain files. This is expected because we do not include the files for the immune cells from the PBMC from either patient. 
 
 ```
 snakemake --cores <number of CPUs> plot_figure_S3
 ```
 
 
-## Reproducing results from Maynard2020
+### Reproducing results from Maynard2020
 
 To reproduce the results from Maynard2020<sup>[REF](#Maynard2020)</sup>, you first need to be in the `Maynard2020` directory
 
@@ -164,7 +164,7 @@ rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Rob
 rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
 ```
 -->
-### Reproducing Figure 4
+#### Reproducing Figure 4
 
 Next, you can generate figure 4 (`output/plots/figure_4A_1.pdf`, `output/plots/figure_4A_2.pdf`, `output/plots/figure_4A_3.pdf`, `output/plots/figure_4B_1.pdf`, `output/plots/figure_4B_2.pdf`, `output/plots/figure_4B_3.pdf`, `output/plots/figure_4C_1.pdf`, `output/plots/figure_4C_2.pdf`) using the below command
 
@@ -172,7 +172,7 @@ Next, you can generate figure 4 (`output/plots/figure_4A_1.pdf`, `output/plots/f
 snakemake --cores <number of CPUs> plot_figure_4
 ```
 
-### Reproducing Figure 5A
+#### Reproducing Figure 5A
 
 Next, you can plot figure 5A (`output/plots/figure_5A.pdf`) using the below command
 
