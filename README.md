@@ -1,6 +1,6 @@
 # CSI-Microbes-analysis
 
-This repository contains part of the workflows for reproducing the results from the bioarxiv paper [Identifying the Landscape of Intratumoral Microbes via a Single Cell Transcriptomic Analysis](https://www.biorxiv.org/content/10.1101/2020.05.14.096230v1) by Welles Robinson, Fiorella Schischlik, Michael Gertz, Alejandro Schaffer and Eytan Ruppin.  This repository contains the workflows to analyze microbial reads from 10x and Smart-seq2 scRNA-seq datasets to identify microbial taxa that are differentially abundant or differentially present. Prior to running this code, these microbial reads must be identified using the [CSI-Microbes-identification repository](https://github.com/ruppinlab/CSI-Microbes-identification). The code in this repository was written by Welles Robinson and Fio Schischlik and alpha-tested by Alejandro Schaffer.
+This repository contains part of the workflows for reproducing the results from the bioarxiv paper [CSI-Microbes: Identifying cell-type specific intracellular microbes from single-cell RNA-seq data](https://www.biorxiv.org/content/10.1101/2020.05.14.096230v1) by Welles Robinson, Fiorella Schischlik, E. Michael Gertz, Joo Sang Lee, Kaiyuan Zhu, S. Cenk Sahinalp, Rob Patro, Mark D.M. Leiserson, Alejandro A. Schäffer, and Eytan Ruppin.  This repository contains the workflows to analyze microbial reads from 10x and Smart-seq2 scRNA-seq datasets to identify microbial taxa that are differentially abundant or differentially present. Prior to running this code, these microbial reads must be identified using the [CSI-Microbes-identification repository](https://github.com/ruppinlab/CSI-Microbes-identification). The code in this repository was written by Welles Robinson and Fio Schischlik and alpha-tested by Alejandro Schaffer.
 
 ## Requirements
 
@@ -8,7 +8,7 @@ This workflow has been tested on Mac OS Mojave (10.14.6) and the Linux OS (biowu
 
 ## Software Installation
 
-It should take < 15 minutes to install the software, which involves downloading the codebase and setting up the environment. There are two ways to download the codebase. To reproduce the key results from our paper, it is recommended to download the zipped version of CSI-Microbes-analysis v0.2.0 from Zenodo (XXX), which contains the intermediate files. The intermediate files are generated using [CSI-Microbes-identification](https://github.com/ruppinlab/CSI-Microbes-identification). The intermediate files for a given dataset are located in the `<dataset_of_interest>/raw` directory. For example, the intermediate files needed to reproduce Aulicino2018 are in `Aulicino2018/raw`).
+It should take < 30 minutes to install the software, which involves downloading the codebase and setting up the environment (not including the time needed unzip the files, which depends on the OS). There are two ways to download the codebase. To reproduce the key results from our paper, it is recommended to download the zipped version of CSI-Microbes-analysis v0.2.0 from [Zenodo](https://doi.org/10.5281/zenodo.4695248), which contains the intermediate files generated using [CSI-Microbes-identification](https://github.com/ruppinlab/CSI-Microbes-identification). The intermediate files for a given dataset are located in the `<dataset_of_interest>/raw` directory. For example, the intermediate files needed to reproduce Aulicino2018 are in `Aulicino2018/raw`).
 
 The second way to download the codebase is to clone the GitHub repository as shown below (which does not contain the intermediate files). The below instructions assume that you have an ssh key associated with your GitHub account. If you do not, you can generate a new ssh key and associate it with your GitHub username by following [these instructions](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
 
@@ -140,7 +140,7 @@ rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robi
 ```
 -->
 
-Next, you can generate supplementary figure 3 (`output/plots/figure_S3A_1.pdf`, `output/plots/figure_S3A_2.pdf`, `output/plots/figure_S3B_1.pdf` and `output/plots/figure_S3B_2.pdf`) using the below command. This command will generating some warning messages that it cannot find certain files. This is expected because we do not include the files for the immune cells from the PBMC from either patient. 
+Next, you can generate supplementary figure 3 (`output/plots/figure_S3A_1.pdf`, `output/plots/figure_S3A_2.pdf`, `output/plots/figure_S3B_1.pdf` and `output/plots/figure_S3B_2.pdf`) using the below command. This command will generating some warning messages that it cannot find certain files. This is expected because we do not include the files for the immune cells from the PBMC from either patient.
 
 ```
 snakemake --cores <number of CPUs> plot_figure_S3
