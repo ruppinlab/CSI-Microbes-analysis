@@ -40,15 +40,33 @@ FIGURE_2A_2 = join("output", "plots", "figure_2A_2.pdf")
 
 rule:
     input:
-        FIGURE_2A_1,
-        FIGURE_2A_2,
-        expand(PATIENT_hFDR_WILCOX_MARKERS, kingdom=["Bacteria"], method="PathSeq",
-               patient="Pt0", celltype=["infected"], lfc=["0.5"],
-               celltype_of_interest="infected", celltype_comparison=["bystander"],
-               norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
+        #TABLE_S1_1
+        #FIGURE_2A_1,
+        # FIGURE_2A_2,
+        "output/plots/piechart.svg",
+        # expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
+        #        patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
+        #        celltype_of_interest="infected", celltype_comparison=["bystander"],
+        #        norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
+        # expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
+        #        patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
+        #        celltype_of_interest="infected", celltype_comparison=["uninfected"],
+        #        norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
+        # expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
+        #        patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
+        #        celltype_of_interest="bystander", celltype_comparison=["uninfected"],
+        #        norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
 
 
 ### Figures ###
+
+rule plot_piechart:
+    input:
+        "output/Pt0/summed_microbe_reads.tsv"
+    output:
+        "output/plots/piechart.svg"
+    script:
+        "src/plot_piechart.py"
 
 rule plot_figure_2A:
     input:
@@ -72,12 +90,12 @@ rule plot_figure2A_2:
         spike_functions="../src/spike_normalization_functions.R"
     input:
         PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
-               patient="Pt0", sample="S0", tax_level="species", norm="spike"),
+               patient="Pt0", sample="S0", tax_level="genus", norm="spike"),
         PATIENT_SPIKEIN_READCOUNT.format(patient="Pt0", sample="S0"),
         PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
-               patient="Pt0", sample="S0", tax_level="species", norm="spike"),
+               patient="Pt0", sample="S0", tax_level="genus", norm="spike"),
         PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
-               patient="Pt0", sample="S0", tax_level="species", norm="spike"),
+               patient="Pt0", sample="S0", tax_level="genus", norm="spike"),
     output:
         FIGURE_2A_2
     script:
@@ -88,10 +106,17 @@ rule plot_figure2A_2:
 rule generate_table_S1:
     input:
         expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
-               patient="Pt0", celltype=["infected"], lfc=["0.5"], sample="S0",
-               tax_level=["species", "genus", "family", "order", "class", "phylum"],
+               patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
                celltype_of_interest="infected", celltype_comparison=["bystander"],
-               norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5")
+               norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
+               patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
+               celltype_of_interest="infected", celltype_comparison=["uninfected"],
+               norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
+               patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
+               celltype_of_interest="bystander", celltype_comparison=["uninfected"],
+               norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
     output:
         TABLE_S1_1
     script:

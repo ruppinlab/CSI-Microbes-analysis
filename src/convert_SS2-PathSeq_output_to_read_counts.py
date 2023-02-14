@@ -13,6 +13,7 @@ for _, cell in cells.iterrows():
 
         filename = snakemake.params[0].format(cell.patient, cell["sample"], cell.plate, cell.name)
         pathseq_df = pd.read_csv(filename, sep="\t")
+        # pathseq_df["sample"] = "{}-{}".format(cell["sample"], cell.name)
         pathseq_df["sample"] = cell.name
         pathseq_df = pathseq_df.loc[pathseq_df["type"] == tax_level]
         if kingdom != "All":
@@ -23,6 +24,7 @@ for _, cell in cells.iterrows():
         pathseq_df = pathseq_df.drop(columns=["name", "taxonomy", "type", "kingdom", "score", "score_normalized", "reads", "reference_length"])
         pathseq_df = pathseq_df.rename(columns={"tax_id": "name"})
         if pathseq_df.empty:
+            # pathseq_df = pd.DataFrame(data={"sample": ["{}-{}".format(cell["sample"], cell.name)], "name": ["placeholder"], "unambiguous": [0]})
             pathseq_df = pd.DataFrame(data={"sample": [cell.name], "name": ["placeholder"], "unambiguous": [0]})
         output.append(pathseq_df)
     except OSError as err:
@@ -45,6 +47,8 @@ read_df = read_df.sort_index(axis=1)
 
 read_df = read_df[(read_df.T != 0).any()]  # remove any rows with all zeroes
 read_df.to_csv(snakemake.output[0], sep="\t")
+#cells = cells.reset_index()
+#cells.index = cells.apply(lambda x: "{}-{}".format(x["sample"], x["cell"]), axis=1)
 cells = cells.sort_index()
 cells.to_csv(snakemake.output[1], sep="\t")
 #star_readcount_df[read_df.columns].sum().to_csv(snakemake.output[2], sep="\t")

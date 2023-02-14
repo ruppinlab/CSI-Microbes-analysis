@@ -1,0 +1,327 @@
+from os.path import join
+import pandas as pd
+
+
+patients = pd.read_csv("data/patients.tsv", sep="\t")
+samples = pd.read_csv("data/samples.tsv", sep="\t")
+df = pd.read_csv("data/units.tsv", sep="\t")
+
+wildcard_constraints:
+    celltype="Tumor|celltype1|Is_Tumor|Myeloid|B|celltype|TNKILC|Stromal",
+    patient="|".join(patients["patient"].unique())
+
+include: "../rules/common.smk"
+include: "../rules/analysis-10x.smk"
+# include: "../rules/hFDR.smk"
+
+
+# let's just focus on tumor samples
+df = df.loc[df["Is_Tumor"] == "Yes"]
+# samples = df[["patient", "sample"]].drop_duplicates()
+df = df.loc[df["10x_chemistry"] == "v3"]
+samples_with_myeloid_cells = df.loc[df["celltype1"] == "Myeloid"][["patient", "sample"]].drop_duplicates()
+samples_with_tumor_cells = df.loc[df["celltype1"] == "Epithelial"][["patient", "sample"]].drop_duplicates()
+samples_with_B_cells = df.loc[df["celltype1"] == "B"][["patient", "sample"]].drop_duplicates()
+samples_with_TNKILC_cells = df.loc[df["celltype1"] == "TNKILC"][["patient", "sample"]].drop_duplicates()
+samples_with_Stromal_cells = df.loc[df["celltype1"] == "Stromal"][["patient", "sample"]].drop_duplicates()
+
+samples = df[["patient", "sample"]].drop_duplicates()
+
+
+FIGURE2C_PLOT = join("output", "plots", "Figure2C.pdf")
+COMBINED_READS_FILE = join("output", "cohort_reads_for_plot.tsv")
+COMBINED_METADATA_FILE = join("output", "cohort_metadata_for_plot.tsv")
+FIGURE_1D_PLOT = join("output", "plots", "Figure_1D-3.pdf")
+TOTAL_UMIs_PLOT = join("output", "plots", "total_UMIs_plot.pdf")
+FIGURE_C163 = join("output", "plots", "C163_celltype_microbe_plot.pdf")
+FIGURE_C166 = join("output", "plots", "C166_celltype_microbe_plot.pdf")
+FIGURE_C169 = join("output", "plots", "C169_celltype_microbe_plot.pdf")
+FIGURE_C170 = join("output", "plots", "C170_celltype_microbe_plot.pdf")
+FIGURE_C173 = join("output", "plots", "C173_celltype_microbe_plot.pdf")
+
+EXPECTED_INFECTED_CELLS_BY_CELLTYPE1 = join("output", "expected_actual_infected_cells_per_celltype1.tsv")
+EXPECTED_INFECTED_CELLS_BY_CELLTYPE2 = join("output", "expected_actual_infected_cells_per_celltype2.tsv")
+EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE1 = join("output", "expected_actual_genera_infected_cells_per_celltype1.tsv")
+EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE2 = join("output", "expected_actual_genera_infected_cells_per_celltype1.tsv")
+N_MICROBIAL_UMIS_PER_CELL = join("output", "n_microbial_UMIs_per_cell.tsv")
+INFECTION_PHENOTYPE_FILE = join("output", "infection_phenotype.tsv")
+EXPECTED_INFECTED_CELLTYPE1_PLOT = join("output", "plots", "expected_infected_celltype1_plot.svg")
+EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT = join("output", "plots", "expected_infected_myeloid_celltype2_plot.svg")
+
+rule all:
+    input:
+        "output/metadata_for_host_transcriptome_analysis.tsv",
+        # EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE1,
+        # EXPECTED_INFECTED_CELLTYPE1_PLOT,
+        # EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT,
+        # FIGURE_C163,
+        # FIGURE_C166,
+        # FIGURE_C169,
+        # FIGURE_C170,
+        # FIGURE_C173
+
+
+rule plot_expected_actual_infected_cells_celltype1:
+    input:
+        EXPECTED_INFECTED_CELLS_BY_CELLTYPE1
+    output:
+        EXPECTED_INFECTED_CELLTYPE1_PLOT
+    script:
+        "src/plot_celltype1_infection_expectation.R"
+
+rule plot_expected_actual_infected_cells_celltype2:
+    input:
+        EXPECTED_INFECTED_CELLS_BY_CELLTYPE2
+    output:
+        EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT
+    script:
+        "src/plot_myeloid_celltype2_infection_expectation.R"
+
+
+# output - metadata file with updated cell ID (to match h5 file), the number of microbial UMIs per cell and one binarizing cells into "infected", "bystander" and "uninfected"
+rule generate_metadata_for_host_transcriptomics:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        "output/metadata_for_host_transcriptome_analysis.tsv"
+    script:
+        "src/prepare_metadata_for_host_transcriptomic_analysis.py"
+
+rule calculate_expected_infected_cells_per_celltype:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        EXPECTED_INFECTED_CELLS_BY_CELLTYPE1,
+        EXPECTED_INFECTED_CELLS_BY_CELLTYPE2
+    script:
+        "src/calculate_expected_actual_infected_cells_by_celltype.py"
+
+rule calculate_expected_infected_cells_by_genera_per_celltype:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE1,
+        # EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE2
+    script:
+        "src/calculate_expected_actual_genera_infected_cells_by_celltype.py"
+
+rule plot_figure1D:
+    input:
+        COMBINED_READS_FILE,
+        COMBINED_METADATA_FILE
+    output:
+        FIGURE_1D_PLOT
+    script:
+        "src/plot_Fig1D-3.R"
+
+rule plot_total_UMIs_v2_v3:
+    input:
+        COMBINED_READS_FILE,
+        COMBINED_METADATA_FILE
+    output:
+        TOTAL_UMIs_PLOT
+    script:
+        "src/plot_total_UMIs_v2_v3.R"
+
+rule plot_figure_C163:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="C163", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="C163", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="C163"),
+    output:
+        FIGURE_C163
+    script:
+        "src/plot_Fig_patient_C163.R"
+
+rule plot_figure_C166:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="C166", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="C166", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="C166"),
+    output:
+        FIGURE_C166
+    script:
+        "src/plot_Fig_patient_C166.R"
+
+rule plot_figure_C169:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="C169", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="C169", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="C169"),
+    output:
+        FIGURE_C169
+    script:
+        "src/plot_Fig_patient_C169.R"
+
+rule plot_figure_C170:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="C170", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="C170", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="C170"),
+    output:
+        FIGURE_C170
+    script:
+        "src/plot_Fig_patient_C170.R"
+
+rule plot_figure_C173:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="C173", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="C173", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="C173"),
+    output:
+        FIGURE_C173
+    script:
+        "src/plot_Fig_patient_C173.R"
+
+#
+#
+#
+# rule summarize_bacteria_positive_cells:
+#     input:
+#         microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="{tax_level}", kingdom="{kingdom}", method="PathSeq"),
+#         taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="{kingdom}", method="PathSeq"),
+#         meta_data = "data/units.tsv"
+#     output:
+#         POS_CELL_PLOT,
+#         POS_CELL_TABLE
+#     script:
+#         "src/plot_bacteria_positive_cells.py"
+#
+#
+# rule calculate_sample_taxa_overlap:
+#     input:
+#         SAMPLE_MICROBE_READ_TABLE,
+#         PATIENT_SAMPLE_METADATA,
+#         PATIENT_PATHSEQ_TAXID_MAP
+#     output:
+#         SAMPLE_TAXA_OVERLAP
+#     script:
+#         "src/calculate_sample_taxa_overlap.py"
+#
+# rule combine_taxa_overlap:
+#     input:
+#         expand(SAMPLE_TAXA_OVERLAP, zip, kingdom=["All"]*samples.shape[0],
+#                method=["PathSeq"]*samples.shape[0], min_umis=[2]*samples.shape[0],
+#                tax_level=["genus"]*samples.shape[0], patient=samples["patient"],
+#                sample=samples["sample"]),
+#     output:
+#         "output/combined_taxa_overlap_2.tsv"
+#     script:
+#         "src/combine_sample_taxa_overlap.py"
+#
+# rule calculate_patient_taxa_overlap:
+#     input:
+#         PATIENT_MICROBE_READ_TABLE,
+#         PATIENT_SAMPLE_METADATA,
+#         PATIENT_PATHSEQ_TAXID_MAP
+#     output:
+#         PATIENT_TAXA_OVERLAP
+#     script:
+#         "src/calculate_sample_taxa_overlap.py"
+#
+# # this counts the number of cells with >= 2 microbes per sample
+# # eventual goal should be to do some sort of immune-infiltration analysis with the output
+# rule identify_top_samples:
+#     input:
+#         microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="{tax_level}", kingdom="{kingdom}", method="PathSeq"),
+#         taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="{kingdom}", method="PathSeq"),
+#         meta_data = "data/units.tsv"
+#     script:
+#         "src/summarize_samples.py"
+#
+# # this rule counts the number of cells and patients that a microbe occurs in (using both >= 1 UMI and >= 2 UMIs)
+# rule identify_top_taxa:
+#     input:
+#         microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="{tax_level}", kingdom="{kingdom}", method="PathSeq"),
+#         taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="{kingdom}", method="PathSeq"),
+#         meta_data = "data/units.tsv"
+#     output:
+#         TOP_TAXA_SUMMARY_FILE
+#     script:
+#         "src/identify_top_genera.py"
+#
+# rule identify_seq_kit_enrichment:
+#     input:
+#         microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="{tax_level}", kingdom="{kingdom}", method="PathSeq"),
+#         taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="{kingdom}", method="PathSeq"),
+#         meta_data = "data/units.tsv"
+#     output:
+#         SEQKIT_NORMAL_ENRICHMENT_FILE
+#     script:
+#         "src/identify_seq_kit_enrichment.py"
+
+rule combine_read_files_for_plot:
+    input:
+        microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"], tax_level="genus", kingdom="All", method="PathSeq"),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        COMBINED_READS_FILE,
+        COMBINED_METADATA_FILE
+    script:
+        "src/combine_reads_for_plot.py"
+
+rule plot_chemistry_piechart:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        "output/plots/v2_genera_piechart.svg",
+        "output/plots/v3_genera_piechart.svg"
+    script:
+        "src/plot_piechart_v2_v3.py"
+
+# rule summarize_hFDR_results:
+#     input:
+#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_tumor_cells["patient"], sample=samples_with_tumor_cells["sample"],
+#                celltype=["Tumor"]*samples_with_tumor_cells.shape[0], celltype_of_interest=["Tumor"]*samples_with_tumor_cells.shape[0],
+#                celltype_comparison=["nonTumor"]*samples_with_tumor_cells.shape[0], tax_level = ["genus"]*samples_with_tumor_cells.shape[0],
+#                method=["PathSeq"]*samples_with_tumor_cells.shape[0], kingdom=["All"]*samples_with_tumor_cells.shape[0],
+#                minprop=[0]*samples_with_tumor_cells.shape[0], min_umis = [1]*samples_with_tumor_cells.shape[0]),
+#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_myeloid_cells["patient"], sample=samples_with_myeloid_cells["sample"],
+#                celltype=["Myeloid"]*samples_with_myeloid_cells.shape[0], celltype_of_interest=["Myeloid"]*samples_with_myeloid_cells.shape[0],
+#                celltype_comparison=["nonMyeloid"]*samples_with_myeloid_cells.shape[0], tax_level = ["genus"]*samples_with_myeloid_cells.shape[0],
+#                method=["PathSeq"]*samples_with_myeloid_cells.shape[0], kingdom=["All"]*samples_with_myeloid_cells.shape[0],
+#                minprop=[0]*samples_with_myeloid_cells.shape[0], min_umis = [1]*samples_with_myeloid_cells.shape[0]),
+#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_B_cells["patient"], sample=samples_with_B_cells["sample"],
+#                celltype=["Bcell"]*samples_with_B_cells.shape[0], celltype_of_interest=["Bcell"]*samples_with_B_cells.shape[0],
+#                celltype_comparison=["nonBcell"]*samples_with_B_cells.shape[0], tax_level = ["genus"]*samples_with_B_cells.shape[0],
+#                method=["PathSeq"]*samples_with_B_cells.shape[0], kingdom=["All"]*samples_with_B_cells.shape[0],
+#                minprop=[0]*samples_with_B_cells.shape[0], min_umis = [1]*samples_with_B_cells.shape[0]),
+#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_TNKILC_cells["patient"], sample=samples_with_TNKILC_cells["sample"],
+#                celltype=["TNKILC"]*samples_with_TNKILC_cells.shape[0], celltype_of_interest=["TNKILC"]*samples_with_TNKILC_cells.shape[0],
+#                celltype_comparison=["nonTNKILC"]*samples_with_TNKILC_cells.shape[0], tax_level = ["genus"]*samples_with_TNKILC_cells.shape[0],
+#                method=["PathSeq"]*samples_with_TNKILC_cells.shape[0], kingdom=["All"]*samples_with_TNKILC_cells.shape[0],
+#                minprop=[0]*samples_with_TNKILC_cells.shape[0], min_umis = [1]*samples_with_TNKILC_cells.shape[0]),
+#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_Stromal_cells["patient"], sample=samples_with_Stromal_cells["sample"],
+#                celltype=["Stromal"]*samples_with_Stromal_cells.shape[0], celltype_of_interest=["Stromal"]*samples_with_Stromal_cells.shape[0],
+#                celltype_comparison=["nonStromal"]*samples_with_Stromal_cells.shape[0], tax_level = ["genus"]*samples_with_Stromal_cells.shape[0],
+#                method=["PathSeq"]*samples_with_Stromal_cells.shape[0], kingdom=["All"]*samples_with_Stromal_cells.shape[0],
+#                minprop=[0]*samples_with_Stromal_cells.shape[0], min_umis = [1]*samples_with_Stromal_cells.shape[0]),
+#
+#     output:
+#         "output/hFDR_results_summary.tsv"
+#     script:
+#         "src/summarize_hFDR_results.py"
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Pelka2021/output/ raw/
+# rsync -avc --include='CB-UMI-count-MW.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Pelka2021/output/ raw/

@@ -1,0 +1,108 @@
+from os.path import join
+import pandas as pd
+
+#ruleorder: calculate_markers_spikein_plate_test > calculate_patient_markers_using_spikeins
+
+wildcard_constraints:
+    sample="S1",
+    patient="P1",
+    celltype="Cell_Type_and_Condition|Condition",
+    celltype_of_interest="HCT116-infected|HCT116-uninfected|HCT116-heat-killed|Infected",
+    celltype_comparison="Jurkat-infected|Jurkat-uninfected|Jurkat-heat-killed|ERCC-only|Heat-Killed|Uninfected",
+    block="plate|infection|patient"
+
+# parameters
+SPIKE_PREFIX = "ERCC-"
+include: "../rules/common.smk"
+include: "../rules/STARsolo.smk"
+include: "../rules/analysis-SS2.smk"
+include: "../rules/spikein.smk"
+include: "../rules/hFDR.smk"
+
+units = pd.read_csv("data/units.tsv", sep="\t")
+
+
+SPIKEIN_NORM_VALUES = join("output", "{patient}", "{method}_{kingdom}_{tax_level}", "spikein_norm_values.tsv")
+
+FIG3A_PLOT = join("output", "plots", "Figure3A.pdf")
+FIG_S1F_PLOT = join("output", "plots", "FigureS1F.pdf")
+
+
+rule:
+    input:
+        # "output/plots/piechart.svg",
+        FIG_S1F_PLOT
+        # "output/table_S1.tsv",
+        # FIG3A_PLOT,
+        # expand(SPIKEIN_NORM_VALUES, kingdom=["All"], method="PathSeq", tax_level="genus",
+        #        patient="P1"),
+        # # expand(PATIENT_SPIKEIN_READCOUNT, patient="P1"),
+
+
+rule get_spikein_norm_values:
+    params:
+        spike_functions="../src/spike_normalization_functions.R"
+    input:
+        PATIENT_MICROBE_READ_TABLE,
+        PATIENT_SPIKEIN_READCOUNT,
+        PATIENT_SAMPLE_METADATA,
+        PATIENT_PATHSEQ_TAXID_MAP
+    output:
+        SPIKEIN_NORM_VALUES
+    script:
+        "src/calculate_spikein_norm_values.R"
+
+rule plot_piechart:
+    input:
+        "output/P1/summed_microbe_reads.tsv"
+    output:
+        "output/plots/piechart.svg"
+    script:
+        "src/plot_piechart.py"
+
+rule plot_figure3A:
+    params:
+        spike_functions="../src/spike_normalization_functions.R"
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_SPIKEIN_READCOUNT.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+    output:
+        FIG3A_PLOT
+    script:
+        "src/plot_Figure3A.R"
+
+rule plot_figureS1F:
+    params:
+        spike_functions="../src/spike_normalization_functions.R"
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_SPIKEIN_READCOUNT.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+    output:
+        FIG_S1F_PLOT
+    script:
+        "src/plot_FigureS1F.R"
+
+rule generate_table_S1:
+    input:
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq", tax_level="genus",
+               patient="P1", celltype=["Condition"], lfc=["0.5"],
+               celltype_of_interest="Infected", celltype_comparison=["ERCC-only"],
+               norm="spike", pvaltype="any", block="plate", direction=["up"], minprop="0.5"),
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq", tax_level="genus",
+               patient="P1", celltype=["Cell_Type_and_Condition"], lfc=["0.5"],
+               celltype_of_interest="HCT116-infected", celltype_comparison=["Jurkat-infected"],
+               norm="spike", pvaltype="any", block="plate", direction=["up"], minprop="0.5"),
+    output:
+        "output/table_S1.tsv"
+    script:
+        "src/generate_table_s1.py"
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/
+
+# rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/
+# rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/
+# rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/

@@ -7,8 +7,9 @@ cells = cells.loc[cells["patient"] == snakemake.wildcards["patient"]]
 #samples = pd.read_csv(snakemake.input[1], sep="\t")
 #samples = samples.merge(patients, on="patient").drop_duplicates()
 # cells.set_index(["sample", "barcode"], inplace=True)
-tax_level = snakemake.wildcards["tax_level"]
-kingdom = snakemake.wildcards["kingdom"]
+
+# tax_level = snakemake.wildcards["tax_level"]
+# kingdom = snakemake.wildcards["kingdom"]
 output = []
 #print(cells)
 cells["cell"] = cells.apply(lambda x: "{}-{}".format(x["sample"], x["barcode"]), axis=1)
@@ -19,19 +20,20 @@ for _, cell in cells.iterrows():
         pathseq_df = pd.read_csv(filename, sep="\t")
         cell_name = cell["cell"]
         pathseq_df["cell"] = cell_name
-        pathseq_df = pathseq_df.loc[pathseq_df["type"] == tax_level]
-        if kingdom != "All":
-            if kingdom == "Viruses":
-                pathseq_df = pathseq_df.loc[pathseq_df["taxonomy"].str.startswith("root|Viruses")]
-            else:
-                pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
-        pathseq_df = pathseq_df.drop(columns=["name", "taxonomy", "type", "kingdom", "score", "score_normalized", "reads", "reference_length"])
+        # pathseq_df = pathseq_df.loc[pathseq_df["type"] == tax_level]
+        # if kingdom != "All":
+        #     if kingdom == "Viruses":
+        #         pathseq_df = pathseq_df.loc[pathseq_df["taxonomy"].str.startswith("root|Viruses")]
+        #     else:
+        #         pathseq_df = pathseq_df.loc[pathseq_df["kingdom"] == kingdom]
+        pathseq_df = pathseq_df.drop(columns=["name", "taxonomy", "score", "score_normalized", "reads", "reference_length"])
         pathseq_df = pathseq_df.rename(columns={"tax_id": "name"})
         if pathseq_df.empty:
             # print("EMPTY")
-            pathseq_df = pd.DataFrame(data={"cell": [cell_name], "name": ["placeholder"], "unambiguous": [0]})
+            pathseq_df = pd.DataFrame(data={"cell": [cell_name], "name": ["placeholder"], "unambiguous": [0], "type": ["placeholder"], "kingdom": ["placeholder"]})
         # else:
         #     print(pathseq_df)
+        # print(pathseq_df)
         output.append(pathseq_df)
     except OSError as err:
         print("OS error: {0}".format(err))
@@ -45,22 +47,23 @@ for _, cell in cells.iterrows():
         raise
 
 df = pd.concat(output)
-#print(df)
 df = df.astype({'unambiguous': 'int64'})
-# desired output - microbes are the indices and samples are the columns
-read_df = df.pivot_table(index="name", columns="cell").fillna(0)
+read_df = df.drop(columns=["type", "kingdom"]).pivot_table(index="name", columns="cell").fillna(0)
+read_df = read_df[(read_df.T != 0).any()]
 read_df.index.name = None  # remove index name
 read_df.columns = read_df.columns.droplevel()  # remove multi-index
-#read_df.index = read_df.index.map(lambda x: x.replace("\'", "").replace("#", ""))
-read_df = read_df.sort_index(axis=1)
 
-read_df = read_df[(read_df.T != 0).any()]  # remove any rows with all zeroes
-read_df.to_csv(snakemake.output[0], sep="\t")
-# cells = cells.reset_index()
-#cells["batch"] = cells["sample"]
-# use sample to refer to a single cell (which is what we do for the Smart-seq2 datasets)
-#cells["sample"] = cells["sample"] + "-" + cells["barcode"]
+tax_levels = ["root", "superkingdom", "kingdom", "phylum", "class", "order",
+              "family", "genus", "species", "strain", "no_rank"]
+
+for tax_level in tax_levels:
+    taxa = df.loc[(df.type == tax_level) & (df["unambiguous"] > 0), "name"].unique()
+    tax_read_df = read_df.loc[taxa]
+    tax_read_df = tax_read_df.sort_index(axis=1)
+    out_file = snakemake.params[1].format(tax_level=tax_level, patient=snakemake.wildcards["patient"], kingdom="All", method="PathSeq")
+    tax_read_df.to_csv(out_file, sep="\t")
+
+
 cells = cells.set_index(keys="cell")
 cells = cells.sort_index()
-cells.to_csv(snakemake.output[1], sep="\t")
-#star_readcount_df[read_df.columns].sum().to_csv(snakemake.output[2], sep="\t")
+cells.to_csv(snakemake.output[0], sep="\t")

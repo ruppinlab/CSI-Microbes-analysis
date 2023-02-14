@@ -1,0 +1,14 @@
+name: CSI-Microbes-human-QC-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconductor-singlecellexperiment
+  - bioconductor-scater
+  - bioconductor-scuttle
+  - bioconductor-scran
+  - r-dynamicTreeCut
+  - r-cowplot
+  - r-stringr
+  - r-svglite

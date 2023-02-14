@@ -4,11 +4,12 @@
 PATIENT_TTEST_MARKERS = join("output", "{patient}", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 PATIENT_WILCOX_MARKERS = join("output", "{patient}", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 PATIENT_BINOM_MARKERS = join("output", "{patient}", "binomial-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
+PATIENT_FISHER_MARKERS = join("output", "{patient}", "fisher-exact-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{minprop}-{min_umis}.tsv")
 
 SAMPLE_TTEST_MARKERS = join("output", "{patient}", "{sample}", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 SAMPLE_WILCOX_MARKERS = join("output", "{patient}", "{sample}", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 SAMPLE_BINOM_MARKERS = join("output", "{patient}", "{sample}", "binomial-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
-SAMPLE_FISHER_MARKERS = join("output", "{patient}", "{sample}", "fisher-exact-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{minprop}.tsv")
+SAMPLE_FISHER_MARKERS = join("output", "{patient}", "{sample}", "fisher-exact-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{minprop}-{min_umis}.tsv")
 
 
 # Wilcox files
@@ -111,20 +112,36 @@ SPECIES_SAMPLE_BINOM_MARKERS = SAMPLE_BINOM_MARKERS.format(
     )
 
 # Fisher's exact files
+CLASS_PATIENT_FISHER_MARKERS = PATIENT_FISHER_MARKERS.format(
+    tax_level="class", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
+    )
+ORDER_PATIENT_FISHER_MARKERS = PATIENT_FISHER_MARKERS.format(
+    tax_level="order", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
+    )
+FAMILY_PATIENT_FISHER_MARKERS = PATIENT_FISHER_MARKERS.format(
+    tax_level="family", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
+    )
+GENUS_PATIENT_FISHER_MARKERS = PATIENT_FISHER_MARKERS.format(
+    tax_level="genus", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
+    )
+SPECIES_PATIENT_FISHER_MARKERS = PATIENT_FISHER_MARKERS.format(
+    tax_level="species", kingdom="{kingdom}", method="{method}", patient="{patient}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
+    )
+
 CLASS_SAMPLE_FISHER_MARKERS = SAMPLE_FISHER_MARKERS.format(
-    tax_level="class", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}"
+    tax_level="class", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
     )
 ORDER_SAMPLE_FISHER_MARKERS = SAMPLE_FISHER_MARKERS.format(
-    tax_level="order", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}"
+    tax_level="order", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
     )
 FAMILY_SAMPLE_FISHER_MARKERS = SAMPLE_FISHER_MARKERS.format(
-    tax_level="family", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}"
+    tax_level="family", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
     )
 GENUS_SAMPLE_FISHER_MARKERS = SAMPLE_FISHER_MARKERS.format(
-    tax_level="genus", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}"
+    tax_level="genus", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
     )
 SPECIES_SAMPLE_FISHER_MARKERS = SAMPLE_FISHER_MARKERS.format(
-    tax_level="species", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}"
+    tax_level="species", kingdom="{kingdom}", method="{method}", patient="{patient}", sample="{sample}", celltype="{celltype}", celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}", minprop="{minprop}", min_umis="{min_umis}"
     )
 
 PATIENT_hFDR_WILCOX_MARKERS = join("output", "results", "{patient}",
@@ -146,7 +163,10 @@ SAMPLE_hFDR_BINOM_MARKERS = join("output", "results", "{patient}", "{sample}",
                                "hFDR-binom-{celltype}-{celltype_of_interest}-{celltype_comparison}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}-{direction}-{minprop}.tsv")
 
 SAMPLE_hFDR_FISHER_MARKERS = join("output", "results", "{patient}", "{sample}",
-                               "hFDR-fisher-exact-{celltype}-{celltype_of_interest}-{celltype_comparison}-{method}-{kingdom}-{minprop}.tsv")
+                               "hFDR-fisher-exact-{celltype}-{celltype_of_interest}-{celltype_comparison}-{method}-{kingdom}-{minprop}-{min_umis}.tsv")
+
+PATIENT_hFDR_FISHER_MARKERS = join("output", "results", "{patient}",
+                               "hFDR-fisher-exact-{celltype}-{celltype_of_interest}-{celltype_comparison}-{method}-{kingdom}-{minprop}-{min_umis}.tsv")
 
 
 rule adjust_hFRD_wilcox_patient:
@@ -258,5 +278,21 @@ rule adjust_hFRD_fisher_sample:
         species_markers = SPECIES_SAMPLE_FISHER_MARKERS,
     output:
         SAMPLE_hFDR_FISHER_MARKERS
+    script:
+        "../src/run_hFDR.py"
+
+rule adjust_hFRD_fisher_patient:
+    params:
+        metric="odds.ratio"
+    input:
+        edgelist = PATIENT_PATHSEQ_EDGELIST_FILE,
+        tax_id_map = PATIENT_PATHSEQ_TAXID_MAP,
+        class_markers = CLASS_PATIENT_FISHER_MARKERS,
+        order_markers = ORDER_PATIENT_FISHER_MARKERS,
+        family_markers = FAMILY_PATIENT_FISHER_MARKERS,
+        genus_markers = GENUS_PATIENT_FISHER_MARKERS,
+        species_markers = SPECIES_PATIENT_FISHER_MARKERS,
+    output:
+        PATIENT_hFDR_FISHER_MARKERS
     script:
         "../src/run_hFDR.py"

@@ -104,7 +104,7 @@ rule calculate_sample_markers_using_spikeins:
     input:
         SAMPLE_MICROBE_READ_TABLE,
         SAMPLE_SPIKEIN_READCOUNT,
-        SAMPLE_SAMPLE_METADATA,
+        PATIENT_SAMPLE_METADATA,
         PATIENT_PATHSEQ_TAXID_MAP
     output:
         SAMPLE_TTEST_MARKERS,
@@ -122,7 +122,7 @@ rule calculate_plate_markers_using_spikeins:
     input:
         PLATE_MICROBE_READ_TABLE,
         PLATE_SPIKEIN_READCOUNT,
-        PLATE_SAMPLE_METADATA,
+        PATIENT_SAMPLE_METADATA,
         PATIENT_PATHSEQ_TAXID_MAP
     output:
         PLATE_TTEST_MARKERS,
@@ -151,7 +151,7 @@ rule plot_spike_normalization_sample:
     input:
         SAMPLE_MICROBE_READ_TABLE,
         SAMPLE_SPIKEIN_READCOUNT,
-        SAMPLE_SAMPLE_METADATA,
+        PATIENT_SAMPLE_METADATA,
         PATIENT_PATHSEQ_TAXID_MAP
     output:
         SAMPLE_SPIKE_NORM_PLOT
@@ -164,7 +164,7 @@ rule plot_spike_normalization_plate:
     input:
         PLATE_MICROBE_READ_TABLE,
         PLATE_SPIKEIN_READCOUNT,
-        PLATE_SAMPLE_METADATA,
+        PATIENT_SAMPLE_METADATA,
         PATIENT_PATHSEQ_TAXID_MAP
     output:
         PLATE_SPIKE_NORM_PLOT

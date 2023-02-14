@@ -1,0 +1,113 @@
+from os.path import join
+import pandas as pd
+
+
+#patients = pd.read_csv("data/patients.tsv", sep="\t")
+samples = pd.read_csv("data/samples.tsv", sep="\t")[["patient", "sample"]].drop_duplicates()
+units = pd.read_csv("data/units.tsv", sep="\t")
+
+wildcard_constraints:
+    celltype="celltype1",
+    patient="P1",
+    celltype_of_interest="HCT116|THP1|Jurkat",
+    celltype_comparison="HCT116|THP1|Jurkat|all",
+    celltype1="HCT116|THP1|Jurkat",
+    celltype2="HCT116|THP1|Jurkat",
+    celltype3="HCT116|THP1|Jurkat",
+
+include: "../rules/common.smk"
+include: "../rules/analysis-10x.smk"
+# include: "../rules/hFDR.smk"
+
+
+FIG1B_PLOT = join("output", "plots", "Figure1B.pdf")
+FIGS1D_PLOT = join("output", "plots", "FigureS1D.pdf")
+FIGS1E_PLOT = join("output", "plots", "FigureS1E.pdf")
+FIGS2_PLOT = join("output", "plots", "FigureS2.pdf")
+# SAMPLE_FISHER_EXACT = join("output", "{patient}", "{sample}", "fisher-exact-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{minprop}-{min_umis}.tsv")
+
+
+rule all:
+    input:
+        # FIG1B_PLOT,
+        # "output/plots/piechart.svg",
+        # FIGS1D_PLOT,
+        # FIGS1E_PLOT,
+        FIGS2_PLOT
+        # PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq", patient="P1", tax_level="genus"),
+
+
+# rule generate_table_S1:
+#     input:
+#         SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
+#         SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
+#         SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="THP1", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
+#         SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="THP1", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
+#         SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
+#         SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
+#
+
+rule plot_figure_1B:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="P1"),
+    output:
+        FIG1B_PLOT
+    script:
+        "src/plot_Fig1B.R"
+
+rule plot_figure_S2:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="P1"),
+    output:
+        FIGS2_PLOT
+    script:
+        "src/plot_Fig_S2.R"
+
+rule plot_figure_S1_D:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="P1"),
+    output:
+        FIGS1D_PLOT
+    script:
+        "src/plot_Fuso_percent_no_celltype.R"
+
+rule plot_figure_S1_E:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="P1"),
+    output:
+        FIGS1E_PLOT
+    script:
+        "src/plot_Fuso_nreads_no_celltype.R"
+
+rule plot_piechart:
+    input:
+        "output/P1/summed_microbe_reads.tsv"
+    output:
+        "output/plots/piechart.svg"
+    script:
+        "src/plot_piechart.py"
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-10x/output/ raw/
+# rsync -avc --include='barcodes.tsv.gz' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-10x/ raw/
+# rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-10x/ raw/
+# rsync -avc --include='Fn-unpaired-count.gff' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-10x/output/ raw/

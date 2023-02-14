@@ -12,18 +12,32 @@ include: "../rules/hFDR.smk"
 
 FIGURE_2B_1 = join("output", "plots", "figure_2B_1.pdf")
 FIGURE_2B_2 = join("output", "plots", "figure_2B_2.pdf")
-
+FIGURE_S1_D = join("output", "plots", "figure_S1_D.pdf")
+FIGURE_S1_E = join("output", "plots", "figure_S1_E.pdf")
 TABLE_S1_2 = join("output", "Table_S1_2.tsv")
 
 
 rule all:
     input:
-        TABLE_S1_2,
-        FIGURE_2B_1,
-        FIGURE_2B_2,
+        FIGURE_S1_E,
+        # expand(SAMPLE_FISHER_EXACT, kingdom=["All"], method="PathSeq", min_umis=1,
+        #        patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
+        #        tax_level=["genus"],
+        #        celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"]),
+        # TABLE_S1_2,
+        # FIGURE_2B_1,
+        # FIGURE_2B_2,
+        # "output/plots/piechart.svg"
 
 
 ### Rules for Figures ###
+rule plot_piechart:
+    input:
+        "output/Pt0/summed_microbe_reads.tsv"
+    output:
+        "output/plots/piechart.svg"
+    script:
+        "src/plot_piechart.py"
 
 rule plot_figure_2B:
     input:
@@ -33,7 +47,7 @@ rule plot_figure_2B:
 
 rule plot_figure_2B_1:
     input:
-        expand(SAMPLE_FISHER_EXACT, kingdom=["Bacteria"], method="PathSeq",
+        expand(SAMPLE_FISHER_EXACT, kingdom=["All"], method="PathSeq", min_umis=1,
                patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
                tax_level=["species", "genus", "family", "order", "class", "phylum"],
                celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"])
@@ -44,23 +58,48 @@ rule plot_figure_2B_1:
 
 rule plot_figure_2B_2:
     input:
-        SAMPLE_MICROBE_READ_TABLE.format(kingdom="Bacteria", method="PathSeq",
-               patient="Pt0", sample="GSM3454529", tax_level="genus"),
-        SAMPLE_SAMPLE_METADATA.format(kingdom="Bacteria", method="PathSeq",
-               patient="Pt0", sample="GSM3454529", tax_level="genus"),
-        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="Bacteria", method="PathSeq",
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
                patient="Pt0"),
     output:
         FIGURE_2B_2
     script:
         "src/plot_2B_2.R"
 
+rule plot_figure_S1_D:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="Pt0"),
+    output:
+        FIGURE_S1_D
+    script:
+        "src/plot_Salmonella_percent_no_celltype.R"
+
+rule plot_figure_S1_E:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="Pt0"),
+    output:
+        FIGURE_S1_E
+    script:
+        "src/plot_Salmonella_nreads_no_celltype.R"
 
 ### Rules for Supplementary Tables ###
 
 rule generate_table_S1:
     input:
-        expand(SAMPLE_FISHER_EXACT, kingdom=["Bacteria"], method="PathSeq",
+        expand(SAMPLE_FISHER_EXACT, kingdom=["All"], method="PathSeq", min_umis=1,
                patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
                tax_level=["species", "genus", "family", "order", "class", "phylum"],
                celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"])

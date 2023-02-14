@@ -1,0 +1,51 @@
+from os.path import join
+import pandas as pd
+
+
+rule all:
+    input:
+        "output/filtered-units.tsv"
+
+rule combine_filtered_units:
+    input:
+        "output/filtered-3p-units.tsv",
+        "output/filtered-5p-units.tsv"
+    output:
+        "output/filtered-units.tsv"
+    script:
+        "src/combine_filtered_units.py"
+
+# rule plot_figure1D:
+#     conda:
+#         "../envs/scCustomize-env.yaml"
+#     input:
+#         "output/combined_3p_cells.rds"
+#     output:
+#         "output/plots/UMAP_all_cells.pdf"
+#     script:
+#         "src/plot_pretty_UMAP.R"
+
+rule perform_QC_3p_combined:
+    input:
+        "raw/P1-SCAF2961_1_Uninfected/outs/filtered_feature_bc_matrix",
+        "raw/P1-SCAF2962_2_HK/outs/filtered_feature_bc_matrix",
+        "raw/P1-SCAF2963_3_Live/outs/filtered_feature_bc_matrix"
+    output:
+        "output/combined_3p_cells.rds",
+        "output/filtered-3p-units.tsv"
+    script:
+        "src/perform_UMAP.R"
+
+rule perform_QC_5p_live:
+    input:
+        "raw/P1-SCAF2965_5_Live/outs/filtered_feature_bc_matrix"
+    output:
+        "output/combined_5p_cells.rds",
+        "output/filtered-5p-units.tsv"
+    script:
+        "src/analyze_CR_output_live_5.R"
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-10x/output/ raw/
+# rsync -avc --include='barcodes.tsv.gz' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-10x/ raw/
+# rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-10x/ raw/
+# rsync -avc --include='Fn-unpaired-count.gff' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-10x/output/ raw/

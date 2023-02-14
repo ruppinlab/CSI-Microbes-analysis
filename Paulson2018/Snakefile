@@ -19,148 +19,69 @@ include: "../rules/hFDR.smk"
 #
 # BINOM_PLOT = join("output", "{patient}", "plots", "binomial-plot-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}-{microbe_of_interest}.jpg")
 
-FIGURE_S3A_1 = join("output", "plots", "figure_S3A_1.pdf")
-FIGURE_S3A_2 = join("output", "plots", "figure_S3A_2.pdf")
-FIGURE_S3B_1 = join("output", "plots", "figure_S3B_1.pdf")
-FIGURE_S3B_2 = join("output", "plots", "figure_S3B_2.pdf")
 
 FIGURE4A_extended = join("output", "plots", "{patient}", "figure3b_extended_{microbe_of_interest}_{celltype}_{celltype_of_interest}_{celltype_comparison}_{tax_level}_{kingdom}_{method}.pdf")
+COHORT_MICROBE_READ_TABLE = join("output", "All", "species_PathSeq_All_reads.tsv")
+COHORT_SAMPLE_METADATA = join("output", "All", "PathSeq_metadata.tsv")
+COHORT_PATHSEQ_TAXID_MAP = join("output", "All", "tax_id_map_All_PathSeq.tsv")
+FIG_PERCENT_POSITIVE_PLOT = join("output", "plots", "Figure_percent_positive.pdf")
+FIG_nUMIs_PLOT = join("output", "plots", "Figure_nUMIs.pdf")
+CELLTYPE_PLOT_POLYOMAVIRUS_9245 = join("output", "plots", "9245_polyomavirus_tumor_nontumor.pdf")
 
 
 rule all:
     input:
-        FIGURE_S3A_1,
-        FIGURE_S3A_2,
-        FIGURE_S3B_1,
-        FIGURE_S3B_2,
-        # FIGURE4B,
-        # expand(FIGURE4A_extended, patient=["2586-4", "9245-3"], tax_level="species",
-        #        microbe_of_interest="Human_polyomavirus_5",
-        #        celltype="Tumor", celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-        #        method="PathSeq", kingdom="All"),
-        # expand(SAMPLE_FISHER_EXACT, patient=["2586-4"], sample=["PreRxTumor", "Day615Tumor"], tax_level=["class", "order", "family", "genus", "species"],
-        #        celltype="Tumor", celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-        #        method="PathSeq", kingdom="All", minprop=.01),
-        # expand(SAMPLE_FISHER_EXACT, patient=["9245-3"], sample=["RelapseD565Tumor"], tax_level=["class", "order", "family", "genus", "species"],
-        #        celltype="Tumor", celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-        #        method="PathSeq", kingdom="All", minprop=.01),
-        # SAMPLE_hFDR_FISHER_MARKERS.format(patient="2586-4", sample="PreRxTumor",
-        #                                   celltype="Tumor", celltype_of_interest="Tumor",
-        #                                   celltype_comparison="nonTumor",
-        #                                   method="PathSeq", kingdom="All", minprop=0.01),
-        # SAMPLE_hFDR_FISHER_MARKERS.format(patient="2586-4", sample="Day615Tumor",
-        #                                   celltype="Tumor", celltype_of_interest="Tumor",
-        #                                   celltype_comparison="nonTumor",
-        #                                   method="PathSeq", kingdom="All", minprop=0.01),
-        # SAMPLE_hFDR_FISHER_MARKERS.format(patient="9245-3", sample="RelapseD565Tumor",
-        #                                   celltype="Tumor", celltype_of_interest="Tumor",
-        #                                   celltype_comparison="nonTumor",
-        #                                   method="PathSeq", kingdom="All", minprop=0.01),
-        # expand(PATIENT_BINOM_MARKERS, patient=["2586-4"], celltype="Tumor",
-        #        celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-        #        tax_level=["class", "order", "family", "genus", "species"],
-        #        block="sample", kingdom=["Bacteria", "Viruses"], lfc=0,
-        #        method="PathSeq", pvaltype="all"),
-        # expand(PATIENT_BINOM_MARKERS, patient=["9245-3"], celltype="Tumor",
-        #        celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-        #        tax_level=["class", "order", "family", "genus", "species"],
-        #        block="sample", kingdom=["Bacteria", "Viruses"], lfc=0,
-        #        method="PathSeq", pvaltype="all"),
-        # expand(BINOM_PLOT, patient=["9245-3", "2586-4"], celltype="Tumor",
-        #        celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-        #        tax_level=["species"], block="sample", kingdom="Viruses", lfc=0,
-        #        method="PathSeq", pvaltype="all", microbe_of_interest="Human_polyomavirus_5"),
+        FIG_PERCENT_POSITIVE_PLOT,
+        FIG_nUMIs_PLOT,
+        CELLTYPE_PLOT_POLYOMAVIRUS_9245
 
-rule plot_figure_S3:
+rule plot_celltype_infected_9245:
     input:
-        FIGURE_S3A_1,
-        FIGURE_S3A_2,
-        FIGURE_S3B_1,
-        FIGURE_S3B_2
-
-rule plot_figure3A_1:
-    input:
-        SAMPLE_hFDR_FISHER_MARKERS.format(patient="9245-3", sample="RelapseD565Tumor",
-                                          celltype="Tumor", celltype_of_interest="Tumor",
-                                          celltype_comparison="nonTumor",
-                                          method="PathSeq", kingdom="All", minprop=0.01),
-        expand(SAMPLE_FISHER_EXACT, patient="9245-3", sample="RelapseD565Tumor",
-               celltype="Tumor", celltype_of_interest="Tumor", minprop=0.01,
-               celltype_comparison="nonTumor", method="PathSeq", kingdom="All",
-               tax_level=["class", "order", "family", "genus", "species"])
+        SAMPLE_MICROBE_READ_TABLE.format(patient="9245-3", sample="RelapseD565Tumor", tax_level="species", method="PathSeq", kingdom="All"),
+        PATIENT_SAMPLE_METADATA.format(patient="9245-3", method="PathSeq"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(patient="9245-3", method="PathSeq", kingdom="All"),
     output:
-        FIGURE_S3A_1
+        CELLTYPE_PLOT_POLYOMAVIRUS_9245
     script:
-        "src/plot_figure_S3A_1.R"
+        "src/plot_9245_celltype_polyomavirus.R"
 
-rule plot_figure_S3A_2:
+rule plot_chemistry_read_difference:
     input:
-        SAMPLE_MICROBE_READ_TABLE.format(patient="9245-3", sample="RelapseD565Tumor", tax_level="species", kingdom="All", method="PathSeq"),
-        SAMPLE_SAMPLE_METADATA.format(patient="9245-3", sample="RelapseD565Tumor", tax_level="species", kingdom="All", method="PathSeq"),
-        PATIENT_PATHSEQ_TAXID_MAP.format(patient="9245-3", kingdom="All", method="PathSeq")
+        COHORT_MICROBE_READ_TABLE,
+        COHORT_SAMPLE_METADATA,
+        COHORT_PATHSEQ_TAXID_MAP
     output:
-        FIGURE_S3A_2
+        FIG_PERCENT_POSITIVE_PLOT
     script:
-        "src/plot_figure_S3A_2.R"
+        "src/plot_chemistry_percent_positive.R"
 
-rule plot_figure3B_1:
+rule plot_chemistry_read_number:
     input:
-        SAMPLE_hFDR_FISHER_MARKERS.format(patient="2586-4", sample="PreRxTumor",
-                                          celltype="Tumor", celltype_of_interest="Tumor",
-                                          celltype_comparison="nonTumor",
-                                          method="PathSeq", kingdom="All", minprop=0.01),
-        expand(SAMPLE_FISHER_EXACT, patient="2586-4", sample="PreRxTumor",
-               celltype="Tumor", celltype_of_interest="Tumor", minprop=0.01,
-               celltype_comparison="nonTumor", method="PathSeq", kingdom="All",
-               tax_level=["class", "order", "family", "genus", "species"])
+        COHORT_MICROBE_READ_TABLE,
+        COHORT_SAMPLE_METADATA,
+        COHORT_PATHSEQ_TAXID_MAP
     output:
-        FIGURE_S3B_1
+        FIG_nUMIs_PLOT
     script:
-        "src/plot_figure_S3B_1.R"
+        "src/plot_chemistry_nUMIs.R"
 
-rule plot_figure_S3B_2:
+
+rule combine_patients:
     input:
-        SAMPLE_MICROBE_READ_TABLE.format(patient="2586-4", sample="PreRxTumor", tax_level="species", kingdom="All", method="PathSeq"),
-        SAMPLE_SAMPLE_METADATA.format(patient="2586-4", sample="PreRxTumor", tax_level="species", kingdom="All", method="PathSeq"),
+        PATIENT_MICROBE_READ_TABLE.format(patient="9245-3", tax_level="species", kingdom="All", method="PathSeq"),
+        PATIENT_MICROBE_READ_TABLE.format(patient="2586-4", tax_level="species", kingdom="All", method="PathSeq"),
+        PATIENT_SAMPLE_METADATA.format(patient="9245-3", method="PathSeq"),
+        PATIENT_SAMPLE_METADATA.format(patient="2586-4", method="PathSeq"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(patient="9245-3", kingdom="All", method="PathSeq"),
         PATIENT_PATHSEQ_TAXID_MAP.format(patient="2586-4", kingdom="All", method="PathSeq")
     output:
-        FIGURE_S3B_2
+        COHORT_MICROBE_READ_TABLE,
+        COHORT_SAMPLE_METADATA,
+        COHORT_PATHSEQ_TAXID_MAP,
     script:
-        "src/plot_figure_S3B_2.R"
+        "src/combine_patient_data.py"
 
-# rule plot_figure4b:
-#     input:
-#         expand(PATIENT_BINOM_MARKERS, patient=["9245-3"], celltype="Tumor",
-#                celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-#                tax_level=["class", "order", "family", "genus", "species"],
-#                block="sample", kingdom=["All"], lfc=0, minprop=0.01, direction="any",
-#                method="PathSeq", pvaltype="all"),
-#     output:
-#         FIGURE4B
-#     script:
-#         "src/plot_figure4.R"
-#
-# rule plot_figure4_extended:
-#     input:
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_SAMPLE_METADATA,
-#         PATIENT_PATHSEQ_TAXID_MAP
-#     output:
-#         FIGURE4A_extended
-#     script:
-#         "../src/plot_differential_presence.R"
-#
-# rule plot_figure4a:
-#     input:
-#         expand(PATIENT_BINOM_MARKERS, patient=["2586-4"], celltype="Tumor",
-#                celltype_of_interest="Tumor", celltype_comparison="nonTumor",
-#                tax_level=["class", "order", "family", "genus", "species"],
-#                block="sample", kingdom=["All"], lfc=0, minprop=0.01, direction="any",
-#                method="PathSeq", pvaltype="all"),
-#     output:
-#         FIGURE4A
-#     script:
-#         "src/plot_figure4.R"
+
 
 
 # rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Paulson2018/output/ raw/

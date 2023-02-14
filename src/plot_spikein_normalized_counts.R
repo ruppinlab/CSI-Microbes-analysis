@@ -6,6 +6,8 @@ source(snakemake@params[["spike_functions"]])
 sce <- generate_sce(microbe.file=snakemake@input[[1]], spikein.file=snakemake@input[[2]],
   pdata.file=snakemake@input[[3]], celltype.col=snakemake@wildcards[["celltype"]])
 
+print(sce)
+
 tax.map <- read.table(snakemake@input[[4]], sep="\t", header=TRUE)
 
 # rename rownames from tax_id to names
