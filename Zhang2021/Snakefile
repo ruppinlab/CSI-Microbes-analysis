@@ -1,0 +1,110 @@
+from os.path import join
+import pandas as pd
+
+
+#patients = pd.read_csv("data/patients.tsv", sep="\t")
+samples = pd.read_csv("data/samples.tsv", sep="\t")[["patient", "sample"]].drop_duplicates()
+cells = pd.read_csv("data/units.tsv", sep="\t")
+
+wildcard_constraints:
+    celltype="Tumor|celltype1|Myeloid|celltype|Tcell|Bcell|Stromal",
+    patient="|".join(samples["patient"].unique()),
+    #celltype_of_interest="|".join(celltypes),
+
+cells = cells.loc[~cells.patient.isin(["P38", "P39", "P40"])]
+cells = cells.loc[cells["sample"].str.contains("T")]
+samples = cells[["patient", "sample"]].drop_duplicates()
+
+include: "../rules/common.smk"
+include: "../rules/analysis-10x.smk"
+
+EXPECTED_INFECTED_CELLS_BY_CELLTYPE1 = join("output", "expected_actual_infected_cells_per_celltype1.tsv")
+EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE1 = join("output", "expected_actual_genera_infected_cells_per_celltype1.tsv")
+EXPECTED_INFECTED_CELLS_BY_CELLTYPE2 = join("output", "expected_actual_infected_cells_per_celltype2.tsv")
+EXPECTED_INFECTED_CELLTYPE1_PLOT = join("output", "plots", "expected_infected_celltype1_plot.svg")
+EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT = join("output", "plots", "expected_infected_myeloid_celltype2_plot.svg")
+
+CELLTYPE1_UMI_PLOT = "output/plots/n_umis_celltype1.pdf"
+CELLTYPE2_MYELOID_UMI_PLOT = "output/plots/n_umis_myeloid_celltype2.pdf"
+
+COINFECTION_TABLE = "output/coinfection_genera_genera_table.tsv"
+
+rule all:
+    input:
+        COINFECTION_TABLE,
+        EXPECTED_INFECTED_CELLTYPE1_PLOT,
+        EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT,
+        CELLTYPE1_UMI_PLOT,
+        CELLTYPE2_MYELOID_UMI_PLOT
+
+
+
+rule plot_n_UMIs_per_infected_cell:
+    input:
+        "output/metadata_for_host_transcriptome_analysis.tsv"
+    output:
+        CELLTYPE1_UMI_PLOT,
+        CELLTYPE2_MYELOID_UMI_PLOT
+    script:
+        "src/plot_n_microbial_UMIs_per_celltype.py"
+
+
+rule plot_expected_actual_infected_cells_celltype1:
+    input:
+        EXPECTED_INFECTED_CELLS_BY_CELLTYPE1
+    output:
+        EXPECTED_INFECTED_CELLTYPE1_PLOT
+    script:
+        "src/plot_celltype1_infection_expectation.R"
+
+
+rule plot_expected_actual_infected_cells_celltype2:
+    input:
+        EXPECTED_INFECTED_CELLS_BY_CELLTYPE2
+    output:
+        EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT
+    script:
+        "src/plot_myeloid_celltype2_infection_expectation.R"
+
+rule calculate_expected_infected_cells_per_celltype:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        EXPECTED_INFECTED_CELLS_BY_CELLTYPE1,
+        EXPECTED_INFECTED_CELLS_BY_CELLTYPE2
+    script:
+        "src/calculate_expected_actual_infected_cells_by_celltype.py"
+
+rule calculate_expected_infected_cells_by_genera_per_celltype:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE1,
+        # EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE2
+    script:
+        "src/calculate_expected_actual_genera_infected_cells_by_celltype.py"
+
+rule calculate_actual_expected_coinfected_cells:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        COINFECTION_TABLE
+    script:
+        "src/calculate_expected_actual_coinfected_cells.py"
+
+# output - metadata file with updated cell ID (to match h5 file), the number of microbial UMIs per cell and one binarizing cells into "infected", "bystander" and "uninfected"
+rule generate_metadata_for_host_transcriptomics:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        "output/metadata_for_host_transcriptome_analysis.tsv"
+    script:
+        "src/prepare_metadata_for_host_transcriptome_analysis.py"
+
+
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Zhang2021/output/ raw/

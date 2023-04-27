@@ -1,0 +1,7 @@
+name: pandas-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pandas

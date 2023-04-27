@@ -4,17 +4,22 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - anytree
   - bioconductor-scran=1.16.0
   - bioconductor-scater
   - bioconductor-singlecellexperiment
   - pandas
+  - openpyxl
+  - r-seurat
+  - r-remotes
+  - r-fields
   - r-ggplot2
   - r-dplyr
   - r-ggpubr
   - r-ggforce
-  - r-seurat
-  - r-structssi
-  - rpy2
+  - r-svglite
   - snakemake
   - statsmodels
+  - matplotlib
+  - seaborn
+# DoubletFinder is not available using conda so install using the below command
+# remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')

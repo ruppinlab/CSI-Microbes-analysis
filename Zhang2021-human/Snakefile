@@ -1,0 +1,166 @@
+from os.path import join
+
+wildcard_constraints:
+    celltype_column="celltype1|celltype2",
+    celltype="|".join(["Epithelial", "Myeloid", "B", "Stromal", "TNKILC", "Monocyte", "Macrophage"]),
+    direction="up|down"
+
+CD45_pos_read_matrix_gz = join("data", "GSE160269_CD45pos_UMIs.txt.gz")
+CD45_neg_read_matrix_gz = join("data", "GSE160269_CD45neg_UMIs.txt.gz")
+CD45_pos_read_matrix = join("data", "GSE160269_CD45pos_UMIs.txt")
+CD45_neg_read_matrix = join("data", "GSE160269_CD45neg_UMIs.txt")
+
+Seurat_RDS_obj = join("output", "seurat_objects", "all_cells.rds")
+Seurat_subset_RDS_obj = join("output", "seurat_objects", "{celltype_column}_{celltype}_cells.rds")
+cohort_microbe_read_matrix = join("data", "cohort_genera_matrix.tsv")
+cohort_microbe_metadata = join("data", "metadata_for_host_transcriptome_analysis.tsv")
+
+#phenotypic_marker = join("output", "phenotypic_markers", "{phenotype}_{overlap}_{min_umis}.tsv")
+COHORT_RANKED_GENES = join("output", "gene_markers", "{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.tsv")
+COHORT_DE_GENES = join("output", "DE_genes", "{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.tsv")
+VOLCANO_PLOT = join("output", "plots", "{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.pdf")
+
+COHORT_RANKED_GENES_GSEA = join("output", "gene_markers", "{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.rnk")
+GENES_OF_INTEREST_MATRIX = join("output", "gene_matrix", "genes_of_interest_{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.tsv")
+
+
+localrules: convert_markers_to_GSEA_input, ungzip_CD45_positive_read_matrix, ungzip_CD45_negative_read_matrix, download_CD45_positive_read_matrix, download_CD45_negative_read_matrix
+
+
+rule all:
+    input:
+        expand(COHORT_RANKED_GENES_GSEA, celltype_column="celltype1", celltype=["Epithelial", "Myeloid"], phenotype="infection", ident1="infected", ident2="uninfected", direction=["down", "up"]),
+
+rule convert_markers_to_GSEA_input:
+    conda:
+        "../envs/pandas-env.yaml"
+    input:
+        COHORT_RANKED_GENES
+    output:
+        COHORT_RANKED_GENES_GSEA
+    script:
+        "../src/convert_markers_to_GSEA_format.py"
+
+
+# given a phenotypic marker (i.e. infection or Fusobacterium_infection), look for DE genes between uninfected and infected
+rule identify_cohort_gene_markers:
+    conda:
+        "../envs/seurat-env.yaml"
+    resources:
+        mem_mb=32000, # mem="16GB" is not handled correctly by the submit script
+        disk_mb=10000,
+        time="16:00:00"
+    input:
+        Seurat_subset_RDS_obj,
+    output:
+        COHORT_RANKED_GENES
+    script:
+        "../src/identify_cohort_gene_markers_for_GSEA.R"
+
+rule volcano_plot_DE_genes:
+    conda:
+        "../envs/seurat-env.yaml"
+    input:
+        COHORT_DE_GENES
+    output:
+        VOLCANO_PLOT
+    script:
+        "../src/plot_DE_genes.R"
+
+
+rule identify_cohort_DE_genes:
+    conda:
+        "../envs/seurat-env.yaml"
+    resources:
+        mem_mb=32000, # mem="16GB" is not handled correctly by the submit script
+        disk_mb=10000,
+        time="2:00:00"
+    input:
+        Seurat_subset_RDS_obj,
+    output:
+        COHORT_DE_GENES
+    script:
+        "../src/identify_cohort_gene_markers.R"
+
+
+# split on specific cell-type
+rule generate_CD45neg_subset_rds_object:
+    conda:
+        "../envs/seurat-env.yaml"
+    wildcard_constraints:
+        celltype="Epithelial|Stromal"
+    resources:
+        mem_mb=48000, # mem="16GB" is not handled correctly by the submit script
+        disk_mb=10000,
+        time="4:00:00"
+    input:
+        CD45_neg_read_matrix,
+        cohort_microbe_metadata
+    output:
+        Seurat_subset_RDS_obj
+    script:
+        "src/generate_seurat_subset_rds_object.R"
+
+# "Epithelial", "Myeloid", "B", "Stromal", "TNKILC", "Monocyte", "Macrophage"
+# split on specific cell-type
+rule generate_CD45pos_subset_rds_object:
+    wildcard_constraints:
+        celltype="Myeloid|TNKILC|B|Monocyte|Macrophage"
+    conda:
+        "../envs/seurat-env.yaml"
+    resources:
+        mem_mb=32000, # mem="16GB" is not handled correctly by the submit script
+        disk_mb=10000,
+        time="2:00:00"
+    input:
+        CD45_pos_read_matrix,
+        cohort_microbe_metadata
+    output:
+        Seurat_subset_RDS_obj
+    script:
+        "src/generate_seurat_subset_rds_object.R"
+
+
+rule generate_rds_object_all_cells:
+    conda:
+        "../envs/seurat-env.yaml"
+    input:
+        CD45_pos_read_matrix,
+        CD45_neg_read_matrix,
+        cohort_microbe_metadata
+    output:
+        Seurat_RDS_obj
+    script:
+        "src/generate_seurat_rds_object.R"
+
+
+rule ungzip_CD45_positive_read_matrix:
+    input:
+        CD45_pos_read_matrix_gz
+    output:
+        CD45_pos_read_matrix
+    shell:
+        "gzip -d {input}"
+
+
+rule ungzip_CD45_negative_read_matrix:
+    input:
+        CD45_neg_read_matrix_gz
+    output:
+        CD45_neg_read_matrix
+    shell:
+        "gzip -d {input}"
+
+
+rule download_CD45_positive_read_matrix:
+    output:
+        CD45_pos_read_matrix_gz
+    shell:
+        "wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE160nnn/GSE160269/suppl/GSE160269_CD45pos_UMIs.txt.gz --no-check-certificate -P data"
+
+
+rule download_CD45_negative_read_matrix:
+    output:
+        CD45_neg_read_matrix_gz
+    shell:
+        "wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE160nnn/GSE160269/suppl/GSE160269_CD45neg_UMIs.txt.gz --no-check-certificate -P data"

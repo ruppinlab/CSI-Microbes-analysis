@@ -71,7 +71,7 @@ sce <- sce[keepEndogenous]
 
 
 celltype <- sce[[celltype.col]]
-
+print(sce)
 # include n.reads in the output file
 n.reads <- rowSums(counts(sce))
 # filter so we are only comparing highly expressed OTUs to reduce FDR penalty

@@ -1,0 +1,49 @@
+from os.path import join
+import pandas as pd
+
+wildcard_constraints:
+    sample="S1",
+    patient="P1",
+
+# parameters
+# SPIKE_PREFIX = "ERCC-"
+# include: "../rules/common.smk"
+include: "../rules/STARsolo.smk"
+#include: "../rules/analysis-SS2.smk"
+#include: "../rules/spikein.smk"
+#include: "../rules/hFDR.smk"
+
+units = pd.read_csv("data/unfiltered-units.tsv", sep="\t")
+
+
+
+rule:
+    input:
+        "output/plots/UMAP_plot.svg"
+
+
+rule pretty_plot_UMAP:
+    conda:
+        "../envs/CSI-Microbes-human-QC.yaml"
+    input:
+        "output/sce_filtered_obj.rds",
+        "output/meta_data_for_UMAP.tsv"
+    output:
+        "output/plots/UMAP_plot.svg"
+    script:
+        "src/plot_UMAP.R"
+
+
+
+rule perform_human_read_QC:
+    conda:
+        "../envs/CSI-Microbes-human-QC.yaml"
+    input:
+        "data/unfiltered-units.tsv",
+        PATIENT_STARsolo_READCOUNT.format(patient="P1"),
+    output:
+        "output/plots/human_QC_filtering_plot.pdf",
+        "output/filtered-units.tsv",
+        "output/sce_filtered_obj.rds"
+    script:
+        "src/analyze_human_reads.R"

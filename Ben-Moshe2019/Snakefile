@@ -1,74 +1,53 @@
 from os.path import join
 
 wildcard_constraints:
-    pvaltype="all|any|some",
     patient="Pt0",
     sample="GSM3454528|GSM3454529",
     celltype="Monocyte",
 
 include: "../rules/common.smk"
 include: "../rules/analysis-10x.smk"
-include: "../rules/hFDR.smk"
 
-FIGURE_2B_1 = join("output", "plots", "figure_2B_1.pdf")
-FIGURE_2B_2 = join("output", "plots", "figure_2B_2.pdf")
-
-TABLE_S1_2 = join("output", "Table_S1_2.tsv")
+FIGURE_1B = join("output", "plots", "figure_1B.pdf")
+FIGURE_2B = join("output", "plots", "figure_2B.pdf")
 
 
 rule all:
     input:
-        TABLE_S1_2,
-        FIGURE_2B_1,
-        FIGURE_2B_2,
+        FIGURE_1B,
+        FIGURE_2B
 
 
 ### Rules for Figures ###
 
+# genera piechart
 rule plot_figure_2B:
     input:
-        FIGURE_2B_1,
-        FIGURE_2B_2,
-
-
-rule plot_figure_2B_1:
-    input:
-        expand(SAMPLE_FISHER_EXACT, kingdom=["Bacteria"], method="PathSeq",
-               patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
-               tax_level=["species", "genus", "family", "order", "class", "phylum"],
-               celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"])
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="Pt0"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
     output:
-        FIGURE_2B_1
+        FIGURE_2B
     script:
-        "src/plot_figure_2B_1.R"
+        "src/plot_figure_2B.py"
 
-rule plot_figure_2B_2:
+
+rule plot_figure_1B:
     input:
-        SAMPLE_MICROBE_READ_TABLE.format(kingdom="Bacteria", method="PathSeq",
-               patient="Pt0", sample="GSM3454529", tax_level="genus"),
-        SAMPLE_SAMPLE_METADATA.format(kingdom="Bacteria", method="PathSeq",
-               patient="Pt0", sample="GSM3454529", tax_level="genus"),
-        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="Bacteria", method="PathSeq",
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
                patient="Pt0"),
     output:
-        FIGURE_2B_2
+        FIGURE_1B
     script:
-        "src/plot_2B_2.R"
+        "src/plot_figure_1B.R"
 
-
-### Rules for Supplementary Tables ###
-
-rule generate_table_S1:
-    input:
-        expand(SAMPLE_FISHER_EXACT, kingdom=["Bacteria"], method="PathSeq",
-               patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
-               tax_level=["species", "genus", "family", "order", "class", "phylum"],
-               celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"])
-    output:
-        TABLE_S1_2
-    script:
-        "src/generate_table_S1_2.R"
 
 # rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ data/
-# rsync -avc --include='CB-UMI-count-SL1344.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ data/
 # rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/ data/

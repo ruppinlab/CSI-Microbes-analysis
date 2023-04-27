@@ -1,0 +1,150 @@
+from os.path import join
+import pandas as pd
+
+#ruleorder: calculate_markers_spikein_plate_test > calculate_patient_markers_using_spikeins
+
+wildcard_constraints:
+    sample="S1",
+    patient="P1",
+    celltype="Cell_Type_and_Condition|Condition",
+    celltype_of_interest="HCT116-infected|HCT116-uninfected|HCT116-heat-killed|Infected",
+    celltype_comparison="Jurkat-infected|Jurkat-uninfected|Jurkat-heat-killed|ERCC-only|Heat-Killed|Uninfected",
+    block="plate|infection|patient"
+
+# parameters
+SPIKE_PREFIX = "ERCC-"
+include: "../rules/common.smk"
+include: "../rules/STARsolo.smk"
+include: "../rules/analysis-SS2.smk"
+include: "../rules/spikein.smk"
+include: "../rules/hFDR.smk"
+
+units = pd.read_csv("data/units.tsv", sep="\t")
+
+
+# SPIKEIN_NORM_VALUES = join("output", "{patient}", "{method}_{kingdom}_{tax_level}", "spikein_norm_values.tsv")
+
+FIGURE_1D_PLOT = join("output", "plots", "Figure_1D.pdf")
+FIGURE_S2C_PLOT = join("output", "plots", "Figure_S2C.pdf")
+FIGURE_2A_PIECHART = "output/plots/figure_2A_piechart.svg"
+# Files for SRPRISM
+PAIRED_GFF = join("raw", "SRPRISM", "{patient}", "{sample}-{plate}-{cell}", "{genome}-paired-count.gff")
+read_type_table = join("output", "Pt0", "S0", "{genome}-read-type-table.tsv")
+
+rule:
+    input:
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq", tax_level="genus",
+               patient="P1", celltype=["Condition"], lfc=["0.5"],
+               celltype_of_interest="Infected", celltype_comparison=["ERCC-only"],
+               norm="spike", pvaltype="any", block="plate", direction=["up"], minprop="0.5"),
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq", tax_level="genus",
+               patient="P1", celltype=["Cell_Type_and_Condition"], lfc=["0.5"],
+               celltype_of_interest="HCT116-infected", celltype_comparison=["Jurkat-infected"],
+               norm="spike", pvaltype="any", block="plate", direction=["up"], minprop="0.5"),
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq", tax_level="genus",
+               patient="P1", celltype=["Condition"], lfc=["0.5"],
+               celltype_of_interest="Infected", celltype_comparison=["Uninfected"],
+               norm="spike", pvaltype="any", block="plate", direction=["up"], minprop="0.5"),
+        FIGURE_2A_PIECHART,
+        expand("output/plots/piechart_RNA_type_{genome}.svg", genome="Fn"),
+        FIGURE_1D_PLOT,
+        FIGURE_S2C_PLOT,
+        "output/table_S1.tsv"
+
+
+# rule get_spikein_norm_values:
+#     params:
+#         spike_functions="../src/spike_normalization_functions.R"
+#     input:
+#         PATIENT_MICROBE_READ_TABLE,
+#         PATIENT_SPIKEIN_READCOUNT,
+#         PATIENT_SAMPLE_METADATA,
+#         PATIENT_PATHSEQ_TAXID_MAP
+#     output:
+#         SPIKEIN_NORM_VALUES
+#     script:
+#         "src/calculate_spikein_norm_values.R"
+
+# piechart of the genera read distributions
+rule plot_piechart_figure_2A:
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="P1", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="P1"),
+    output:
+        FIGURE_2A_PIECHART
+    script:
+        "src/plot_piechart_figure_2A.py"
+
+#
+rule plot_figure_1D:
+    params:
+        spike_functions="../src/spike_normalization_functions.R"
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_SPIKEIN_READCOUNT.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+    output:
+        FIGURE_1D_PLOT
+    script:
+        "src/plot_Figure1D.R"
+
+# read distribution of conditions (Empty Wells, Unexposed, Heat-Killed Fn, Live Fn)
+rule plot_figureS2C:
+    params:
+        spike_functions="../src/spike_normalization_functions.R"
+    input:
+        PATIENT_MICROBE_READ_TABLE.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_SPIKEIN_READCOUNT.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(patient="P1", kingdom="All", method="PathSeq", tax_level="genus"),
+    output:
+        FIGURE_S2C_PLOT
+    script:
+        "src/plot_FigureS2C.R"
+
+rule generate_table_S1:
+    input:
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq", tax_level="genus",
+               patient="P1", celltype=["Condition"], lfc=["0.5"],
+               celltype_of_interest="Infected", celltype_comparison=["ERCC-only"],
+               norm="spike", pvaltype="any", block="plate", direction=["up"], minprop="0.5"),
+        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq", tax_level="genus",
+               patient="P1", celltype=["Cell_Type_and_Condition"], lfc=["0.5"],
+               celltype_of_interest="HCT116-infected", celltype_comparison=["Jurkat-infected"],
+               norm="spike", pvaltype="any", block="plate", direction=["up"], minprop="0.5"),
+    output:
+        "output/table_S1.tsv"
+    script:
+        "src/generate_table_s1.py"
+
+### Tables ###
+
+rule plot_piechart_RNA_class:
+    input:
+        read_type_table
+    output:
+        "output/plots/piechart_RNA_type_{genome}.svg"
+    script:
+        "src/plot_piechart_RNA_class.py"
+
+### rules for processing the SRPRISM Salmonella files ###
+rule generate_gene_matrices_and_total_counts:
+    input:
+        "data/units.tsv",
+        expand(PAIRED_GFF, zip, patient=units["patient"], sample=units["sample"],
+               plate=units["plate"], cell=units["cell"], genome=["{genome}"]*units.shape[0])
+    output:
+        read_type_table
+    script:
+        "src/generate_Fusobacterium_gene_tables_from_SRPRISM_SS2.py"
+
+# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/
+
+# rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/
+# rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/
+# rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/

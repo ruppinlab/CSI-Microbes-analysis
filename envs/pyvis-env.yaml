@@ -1,0 +1,8 @@
+name: pyvis-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pyvis
+  - pandas
