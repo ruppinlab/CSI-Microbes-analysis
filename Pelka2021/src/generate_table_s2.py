@@ -38,4 +38,4 @@ n_patients = [df.loc[df[x] >= 2].patient.nunique() for x in n_infected_cells.ind
 n_infected_cells["n_patient"] = n_patients
 table_s2_df = n_infected_cells.merge(n_umis.to_frame("n_umis"), left_index=True, right_index=True)
 table_s2_df.index.name = "Genera"
-table_s2_df.to_csv("output/table_s2.tsv", sep="\t")
+table_s2_df.to_csv(snakemake.output[0], sep="\t")

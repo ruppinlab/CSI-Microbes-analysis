@@ -14,51 +14,37 @@ wildcard_constraints:
 cells = cells.loc[~cells.patient.isin(["P38", "P39", "P40"])]
 cells = cells.loc[cells["sample"].str.contains("T")]
 samples = cells[["patient", "sample"]].drop_duplicates()
-cd45pos_samples = cells.loc[cells["sample"].str.endswith("CD45pos")]#[["patient", "sample"]].drop_duplicates()
-cd45neg_samples = cells.loc[cells["sample"].str.endswith("CD45neg")]#[["patient", "sample"]].drop_duplicates()
-
-tcell_samples = cd45pos_samples.loc[cd45pos_samples["celltype1"] == "TNKILC"][["patient", "sample"]].drop_duplicates()
-bcell_samples = cd45pos_samples.loc[cd45pos_samples["celltype1"] == "B"][["patient", "sample"]].drop_duplicates()
-myeloid_samples = cd45pos_samples.loc[cd45pos_samples["celltype1"] == "Myeloid"][["patient", "sample"]].drop_duplicates()
-
-tumor_samples = cd45neg_samples.loc[cd45neg_samples["Tumor"] == "Tumor"][["patient", "sample"]].drop_duplicates()
-stromal_samples = cd45neg_samples.loc[cd45neg_samples["celltype1"] == "Stromal"][["patient", "sample"]].drop_duplicates()
-
-POS_CELL_PLOT = join("output", "plots", "{kingdom}_{tax_level}_positive_cells_{min_umis}_plot.png")
 
 include: "../rules/common.smk"
 include: "../rules/analysis-10x.smk"
-#include: "../rules/hFDR.smk"
-
-PATIENT_BACTERIA_PLOT = join("output", "plots", "two_celltypes", "{celltype}_{celltype_of_interest}_{celltype_comparison}_{microbe_of_interest}_{patient}_{sample}_{min_umis}.pdf")
-POS_CELL_TABLE = join("output", "plots", "{kingdom}_{tax_level}_positive_cells_{min_umis}_table.tsv")
-SAMPLE_TAXA_OVERLAP = join("output", "taxa_overlap", "{patient}_{sample}_{tax_level}_{method}_{kingdom}_{min_umis}_enrichment.tsv")
 
 EXPECTED_INFECTED_CELLS_BY_CELLTYPE1 = join("output", "expected_actual_infected_cells_per_celltype1.tsv")
 EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE1 = join("output", "expected_actual_genera_infected_cells_per_celltype1.tsv")
 EXPECTED_INFECTED_CELLS_BY_CELLTYPE2 = join("output", "expected_actual_infected_cells_per_celltype2.tsv")
-N_MICROBIAL_UMIS_PER_CELL = join("output", "n_microbial_UMIs_per_cell.tsv")
 EXPECTED_INFECTED_CELLTYPE1_PLOT = join("output", "plots", "expected_infected_celltype1_plot.svg")
 EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT = join("output", "plots", "expected_infected_myeloid_celltype2_plot.svg")
-SAMPLE_P89TCD45POS_PLOT = join("output", "plots", "sample_P89T-CD45pos_plot.pdf")
+
+CELLTYPE1_UMI_PLOT = "output/plots/n_umis_celltype1.pdf"
+CELLTYPE2_MYELOID_UMI_PLOT = "output/plots/n_umis_myeloid_celltype2.pdf"
+
+COINFECTION_TABLE = "output/coinfection_genera_genera_table.tsv"
 
 rule all:
     input:
-        EXPECTED_GENERA_INFECTED_CELLS_BY_CELLTYPE1,
-        EXPECTED_INFECTED_CELLS_BY_CELLTYPE1,
-        EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT,
+        COINFECTION_TABLE,
         EXPECTED_INFECTED_CELLTYPE1_PLOT,
-        SAMPLE_P89TCD45POS_PLOT,
-        N_MICROBIAL_UMIS_PER_CELL,
-        "output/metadata_for_host_transcriptome_analysis.tsv"
+        EXPECTED_INFECTED_MYELOID_CELLTYPE2_PLOT,
+        CELLTYPE1_UMI_PLOT,
+        CELLTYPE2_MYELOID_UMI_PLOT
+
 
 
 rule plot_n_UMIs_per_infected_cell:
     input:
         "output/metadata_for_host_transcriptome_analysis.tsv"
     output:
-        "output/plots/n_umis_celltype1.pdf",
-        "output/plots/n_umis_myeloid_celltype2.pdf"
+        CELLTYPE1_UMI_PLOT,
+        CELLTYPE2_MYELOID_UMI_PLOT
     script:
         "src/plot_n_microbial_UMIs_per_celltype.py"
 
@@ -100,6 +86,14 @@ rule calculate_expected_infected_cells_by_genera_per_celltype:
     script:
         "src/calculate_expected_actual_genera_infected_cells_by_celltype.py"
 
+rule calculate_actual_expected_coinfected_cells:
+    input:
+        microbe_reads = expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], kingdom=["All"]*samples.shape[0], method=["PathSeq"]*samples.shape[0]),
+        tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="All", method="PathSeq")
+    output:
+        COINFECTION_TABLE
+    script:
+        "src/calculate_expected_actual_coinfected_cells.py"
 
 # output - metadata file with updated cell ID (to match h5 file), the number of microbial UMIs per cell and one binarizing cells into "infected", "bystander" and "uninfected"
 rule generate_metadata_for_host_transcriptomics:
@@ -112,74 +106,5 @@ rule generate_metadata_for_host_transcriptomics:
         "src/prepare_metadata_for_host_transcriptome_analysis.py"
 
 
-# rule combine_genera_level_results:
-#     input:
-#         expand(SAMPLE_FISHER_EXACT, zip, patient=tcell_samples["patient"], sample=tcell_samples["sample"],
-#                celltype=["Tcell"]*tcell_samples.shape[0], celltype_of_interest=["Tcell"]*tcell_samples.shape[0],
-#                celltype_comparison=["nonTcell"]*tcell_samples.shape[0], tax_level=["{tax_level}"]*tcell_samples.shape[0],
-#                method=["PathSeq"]*tcell_samples.shape[0], kingdom=["All"]*tcell_samples.shape[0],
-#                minprop=[0]*tcell_samples.shape[0], min_umis=[1]*tcell_samples.shape[0]),
-#         expand(SAMPLE_FISHER_EXACT, zip, patient=bcell_samples["patient"], sample=bcell_samples["sample"],
-#                celltype=["Bcell"]*bcell_samples.shape[0], celltype_of_interest=["Bcell"]*bcell_samples.shape[0],
-#                celltype_comparison=["nonBcell"]*bcell_samples.shape[0], tax_level=["{tax_level}"]*bcell_samples.shape[0],
-#                method=["PathSeq"]*bcell_samples.shape[0], kingdom=["All"]*bcell_samples.shape[0],
-#                minprop=[0]*bcell_samples.shape[0], min_umis=[1]*bcell_samples.shape[0]),
-#         expand(SAMPLE_FISHER_EXACT, zip, patient=myeloid_samples["patient"], sample=myeloid_samples["sample"],
-#                celltype=["Myeloid"]*myeloid_samples.shape[0], celltype_of_interest=["Myeloid"]*myeloid_samples.shape[0],
-#                celltype_comparison=["nonMyeloid"]*myeloid_samples.shape[0], tax_level=["{tax_level}"]*myeloid_samples.shape[0],
-#                method=["PathSeq"]*myeloid_samples.shape[0], kingdom=["All"]*myeloid_samples.shape[0],
-#                minprop=[0]*myeloid_samples.shape[0], min_umis=[1]*myeloid_samples.shape[0]),
-#         expand(SAMPLE_FISHER_EXACT, zip, patient=tumor_samples["patient"], sample=tumor_samples["sample"],
-#                celltype=["Tumor"]*tumor_samples.shape[0], celltype_of_interest=["Tumor"]*tumor_samples.shape[0],
-#                celltype_comparison=["nonTumor"]*tumor_samples.shape[0], tax_level=["{tax_level}"]*tumor_samples.shape[0],
-#                method=["PathSeq"]*tumor_samples.shape[0], kingdom=["All"]*tumor_samples.shape[0],
-#                minprop=[0]*tumor_samples.shape[0], min_umis=[1]*tumor_samples.shape[0]),
-#         expand(SAMPLE_FISHER_EXACT, zip, patient=stromal_samples["patient"], sample=stromal_samples["sample"],
-#                celltype=["Stromal"]*stromal_samples.shape[0], celltype_of_interest=["Stromal"]*stromal_samples.shape[0],
-#                celltype_comparison=["nonStromal"]*stromal_samples.shape[0], tax_level=["genus"]*stromal_samples.shape[0],
-#                method=["PathSeq"]*stromal_samples.shape[0], kingdom=["All"]*stromal_samples.shape[0],
-#                minprop=[0]*stromal_samples.shape[0], min_umis=[2]*stromal_samples.shape[0]),
-#     output:
-#         "output/combined_{tax_level}_enrichment.tsv"
-#     script:
-#         "src/combine_genera_enrichment.py"
-
-rule combine_taxa_overlap:
-    input:
-        expand(SAMPLE_TAXA_OVERLAP, zip, kingdom=["All"]*samples.shape[0],
-               method=["PathSeq"]*samples.shape[0], min_umis=[2]*samples.shape[0],
-               tax_level=["genus"]*samples.shape[0], patient=samples["patient"],
-               sample=samples["sample"]),
-    output:
-        "output/combined_taxa_overlap_2.tsv"
-    script:
-        "src/combine_sample_taxa_overlap.py"
-
-rule calculate_sample_taxa_overlap:
-    input:
-        SAMPLE_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA,
-        PATIENT_PATHSEQ_TAXID_MAP
-    output:
-        SAMPLE_TAXA_OVERLAP
-    script:
-        "src/calculate_sample_taxa_overlap.py"
-
-rule plot_sample_P89T_pos:
-    input:
-        SAMPLE_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
-               patient="P89", sample="P89T-CD45pos", tax_level="genus"),
-        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
-               patient="P89", tax_level="genus"),
-        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
-               patient="P89"),
-    output:
-        SAMPLE_P89TCD45POS_PLOT
-    script:
-        "src/plot_sample_P89T_pos.R"
-
 
 # rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Zhang2021/output/ raw/
-# rsync -avc --include='barcodes.tsv.gz' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Zhang2021/ raw/
-# rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Zhang2021/ raw/
-# rsync -avc --include='Ps-unpaired-count.gff' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Zhang2021/output/ raw/

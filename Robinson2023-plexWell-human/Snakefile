@@ -1,8 +1,6 @@
 from os.path import join
 import pandas as pd
 
-#ruleorder: calculate_markers_spikein_plate_test > calculate_patient_markers_using_spikeins
-
 wildcard_constraints:
     sample="S1",
     patient="P1",
@@ -49,8 +47,3 @@ rule perform_human_read_QC:
         "output/sce_filtered_obj.rds"
     script:
         "src/analyze_human_reads.R"
-
-
-# rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/
-# rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/
-# rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Robinson2022-SS2/output/ raw/

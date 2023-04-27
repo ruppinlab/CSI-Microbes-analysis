@@ -1,257 +1,123 @@
 from os.path import join
-import pandas as pd
-
-
-patients = pd.read_csv("data/patients.tsv", sep="\t")
-samples = pd.read_csv("data/samples.tsv", sep="\t")
-df = pd.read_csv("data/units.tsv", sep="\t")
 
 wildcard_constraints:
-    celltype="Tumor|celltype1|Is_Tumor|Myeloid|Bcell|celltype|TNKILC|Stromal",
-    patient="|".join(patients["patient"].unique())
+  overlap="inclusive|exclusive",
+  celltype_columns="celltype1|celltype2",
+  celltype="|".join(["Epithelial", "Myeloid", "B", "Stromal", "TNKILC", "Monocyte", "Macrophage"]),
+  direction="up|down"
 
-include: "../rules/common.smk"
-include: "../rules/analysis-10x.smk"
-# include: "../rules/hFDR.smk"
+# input data
+H5_read_matrix = join("data", "GSE178341_crc10x_full_c295v4_submit.h5")
+cohort_microbe_metadata = join("data", "metadata_for_host_transcriptome_analysis.tsv")
 
+Seurat_all_RDS_obj = join("output", "seurat_objects", "all_cells.rds")
+Seurat_subset_RDS_obj = join("output", "seurat_objects", "{celltype_column}_{celltype}_cells.rds")
+# processed data files
+COHORT_RANKED_GENES = join("output", "gene_markers", "{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.tsv")
+COHORT_DE_GENES = join("output", "DE_genes", "{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.tsv")
+VOLCANO_PLOT = join("output", "plots", "{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.pdf")
+COHORT_RANKED_GENES_GSEA = join("output", "GSEA_markers", "{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}_bypval.rnk")
 
-# let's just focus on tumor samples
-df = df.loc[df["Is_Tumor"] == "Yes"]
-# samples = df[["patient", "sample"]].drop_duplicates()
-df = df.loc[df["10x_chemistry"] == "v3"]
-samples_with_myeloid_cells = df.loc[df["celltype1"] == "Myeloid"][["patient", "sample"]].drop_duplicates()
-samples_with_tumor_cells = df.loc[df["celltype1"] == "Epithelial"][["patient", "sample"]].drop_duplicates()
-samples_with_B_cells = df.loc[df["celltype1"] == "B"][["patient", "sample"]].drop_duplicates()
-samples_with_TNKILC_cells = df.loc[df["celltype1"] == "TNKILC"][["patient", "sample"]].drop_duplicates()
-samples_with_Stromal_cells = df.loc[df["celltype1"] == "Stromal"][["patient", "sample"]].drop_duplicates()
+GENES_OF_INTEREST_MATRIX = join("output", "gene_matrix", "genes_of_interest_{celltype_column}_{celltype}_{phenotype}_{ident1}_{ident2}.tsv")
 
-
-#mmrd_df = patients.loc[patients.MMRStatus == "MMRp"]
-#cells = cells.loc[cells["patient"].isin(mmrd_df.patient)]
-# tumor_samples = samples.loc[samples["Is_Tumor"] == "Yes"]
-#patients_with_normal = samples.loc[samples["Is_Tumor"] == "No"].patient.unique()
-# unsorted_samples = samples.loc[samples["ProcessingMethod"] == "unsorted"]
-#cells = cells.loc[cells["sample"].isin(unsorted_samples["sample"])]
-#cells = cells.loc[cells.patient != "C103"]
-samples = df[["patient", "sample"]].drop_duplicates()
-#tumor_sample_df = samples.loc[samples["Is_Tumor"] == "Yes"]
-#tumor_sample_df = tumor_sample_df[["patient", "sample"]].drop_duplicates()
-# tumor_samples = cells.loc[cells.Tumor == "Tumor"]["sample"].unique()
-# MICROBE_READ_TABLE = join("output", "all", "{tax_level}_{method}_{kingdom}_reads.tsv")
-# SAMPLE_METADATA = join("output", "all", "{tax_level}_{method}_{kingdom}_metadata.tsv")
-# PATHSEQ_TAXID_MAP = join("output", "{patient}", "tax_id_map_{kingdom}_{method}.tsv")
-# COHORT_MICROBE_READ_TABLE = join("output", "all", "{tax_level}_{method}_{kingdom}_reads.tsv")
-# PATIENT_PATHSEQ_TAXID_MAP = join("output", "{patient}", "tax_id_map_{kingdom}_{method}.tsv")
-POS_CELL_PLOT = join("output", "plots", "{kingdom}_{tax_level}_positive_cells_{min_umis}_plot.png")
-POS_CELL_TABLE = join("output", "plots", "{kingdom}_{tax_level}_positive_cells_{min_umis}_table.tsv")
-PATIENT_BACTERIA_PLOT = join("output", "plots", "two_celltypes", "{celltype}_{celltype_of_interest}_{celltype_comparison}_{microbe_of_interest}_{patient}_{min_umis}.pdf")
-OVERALL_ENRICHMENT_FILE = join("output", "enrichments", "{kingdom}_{tax_level}_{group}_{group1}_{group2}_{min_umis}.tsv")
-SEQKIT_NORMAL_ENRICHMENT_FILE = join("output", "enrichments", "{kingdom}_{tax_level}_10x_chemistry_v2_v3_{min_umis}.tsv")
-SAMPLE_TAXA_OVERLAP = join("output", "taxa_overlap", "{patient}_{sample}_{tax_level}_{method}_{kingdom}_{min_umis}_enrichment.tsv")
-PATIENT_TAXA_OVERLAP = join("output", "taxa_overlap", "{patient}_{tax_level}_{method}_{kingdom}_{min_umis}_enrichment.tsv")
-TOP_TAXA_SUMMARY_FILE = join("output", "top_taxa", "top_{tax_level}_{kingdom}_summary.tsv")
-FIGURE2C_PLOT = join("output", "plots", "Figure2C.pdf")
-COMBINED_READS_FILE = join("output", "cohort_reads_for_plot.tsv")
-COMBINED_METADATA_FILE = join("output", "cohort_metadata_for_plot.tsv")
-FIGURE_1D_PLOT = join("output", "plots", "Figure_1D-3.pdf")
+localrules: download_H5_read_matrix, convert_markers_to_GSEA_input
 
 
 rule all:
     input:
-        # "output/combined_taxa_overlap_2.tsv",
-        # FIGURE_1D_PLOT,
-        #expand(SAMPLE_MICROBE_READ_TABLE, zip, patient=samples["patient"], sample=samples["sample"], tax_level=["genus"]*samples.shape[0], method=["PathSeq"]*samples.shape[0], kingdom=["All"]*samples.shape[0]),
-        #expand(PATIENT_PATHSEQ_TAXID_MAP, zip, patient=samples["patient"], method=["PathSeq"]*samples.shape[0], kingdom=["All"]*samples.shape[0])
-        # "output/combined_taxa_overlap.tsv",
-        expand(SAMPLE_BINOM_MARKERS, zip, patient=samples["patient"], sample=samples["sample"],
-               celltype=["celltype1"]*samples.shape[0], tax_level=["genus"]*samples.shape[0],
-               method=["PathSeq"]*samples.shape[0], kingdom=["All"]*samples.shape[0],
-               pvaltype=["any"]*samples.shape[0], direction=["up"]*samples.shape[0],
-               min_umis=[2]*samples.shape[0]),
-        # expand(SAMPLE_BINOM_MARKERS, zip, patient=samples_with_Stromal_cells["patient"], sample=samples_with_Stromal_cells["sample"],
-        #        celltype=["celltype1"]*samples_with_Stromal_cells.shape[0], celltype_of_interest=["Stromal"]*samples_with_Stromal_cells.shape[0],
-        #        celltype_comparison=["all"]*samples_with_Stromal_cells.shape[0], tax_level=["genus"]*samples_with_Stromal_cells.shape[0],
-        #        method=["PathSeq"]*samples_with_Stromal_cells.shape[0], kingdom=["All"]*samples_with_Stromal_cells.shape[0],
-        #        pvaltype=["any"]*samples_with_Stromal_cells.shape[0], direction=["up"]*samples_with_Stromal_cells.shape[0],
-        #        min_umis=[2]*samples_with_Stromal_cells.shape[0]),
-        # expand(SAMPLE_BINOM_MARKERS, zip, patient=samples_with_tumor_cells["patient"], sample=samples_with_tumor_cells["sample"],
-        #        celltype=["celltype1"]*samples_with_tumor_cells.shape[0], celltype_of_interest=["Epithelial"]*samples_with_tumor_cells.shape[0],
-        #        celltype_comparison=["all"]*samples_with_tumor_cells.shape[0], tax_level=["genus"]*samples_with_tumor_cells.shape[0],
-        #        method=["PathSeq"]*samples_with_tumor_cells.shape[0], kingdom=["All"]*samples_with_tumor_cells.shape[0],
-        #        pvaltype=["any"]*samples_with_tumor_cells.shape[0], direction=["up"]*samples_with_tumor_cells.shape[0],
-        #        min_umis=[2]*samples_with_tumor_cells.shape[0]),
-        # expand(SAMPLE_FISHER_MARKERS, zip, patient=samples_with_tumor_cells["patient"], sample=samples_with_tumor_cells["sample"],
-        #        celltype=["Epithelial"]*samples_with_tumor_cells.shape[0], celltype_of_interest=["Tumor"]*samples_with_tumor_cells.shape[0],
-        #        celltype_comparison=["nonTumor"]*samples_with_tumor_cells.shape[0], tax_level=["genus"]*samples_with_tumor_cells.shape[0],
-        #        method=["PathSeq"]*samples_with_tumor_cells.shape[0], kingdom=["All"]*samples_with_tumor_cells.shape[0],
-        #        minprop=[0]*samples_with_tumor_cells.shape[0], min_umis=[2]*samples_with_tumor_cells.shape[0]),
-        # expand(SAMPLE_FISHER_MARKERS, zip, patient=samples_with_Stromal_cells["patient"], sample=samples_with_Stromal_cells["sample"],
-        #        celltype=["Stromal"]*samples_with_Stromal_cells.shape[0], celltype_of_interest=["Stromal"]*samples_with_Stromal_cells.shape[0],
-        #        celltype_comparison=["nonStromal"]*samples_with_Stromal_cells.shape[0], tax_level=["genus"]*samples_with_Stromal_cells.shape[0],
-        #        method=["PathSeq"]*samples_with_Stromal_cells.shape[0], kingdom=["All"]*samples_with_Stromal_cells.shape[0],
-        #        minprop=[0]*samples_with_Stromal_cells.shape[0], min_umis=[2]*samples_with_Stromal_cells.shape[0]),
+        expand(COHORT_RANKED_GENES_GSEA, celltype_column="celltype1", celltype=["Epithelial"], phenotype="infection", ident1="infected", ident2="uninfected", direction=["down", "up"]),
+        expand(COHORT_RANKED_GENES_GSEA, celltype_column="celltype1", celltype="Myeloid", phenotype="infection", ident1="infected", ident2="uninfected", direction=["down", "up"]),
 
-rule plot_figure1D:
+
+rule convert_markers_to_GSEA_input:
+    conda:
+        "../envs/pandas-env.yaml"
     input:
-        COMBINED_READS_FILE,
-        COMBINED_METADATA_FILE
+        COHORT_RANKED_GENES
     output:
-        FIGURE_1D_PLOT
+        COHORT_RANKED_GENES_GSEA
     script:
-        "src/plot_Fig1D-3.R"
+        "../src/convert_markers_to_GSEA_format.py"
 
-rule combine_reads_for_plot:
+# given a phenotypic marker (i.e. infection or Fusobacterium_infection), look for DE genes between uninfected and infected
+rule identify_cohort_gene_markers:
+    conda:
+        "../envs/seurat-env.yaml"
+    resources:
+        mem_mb=32000, # mem="16GB" is not handled correctly by the submit script
+        disk_mb=10000,
+        time="16:00:00"
     input:
-        microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="genus", kingdom="All", method="PathSeq"),
-        taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="genus", method="PathSeq"),
-        meta_data = "data/units.tsv"
+        Seurat_subset_RDS_obj,
     output:
-        COMBINED_READS_FILE
+        COHORT_RANKED_GENES
     script:
-        "src/combine_reads_for_plot.py"
+        "../src/identify_cohort_gene_markers_for_GSEA.R"
 
-
-rule plot_figure2C:
+rule volcano_plot_DE_genes:
+    conda:
+        "../envs/seurat-env.yaml"
     input:
-        POS_CELL_TABLE.format(kingdom="All", min_umis=2, tax_level="genus")
+        COHORT_DE_GENES
     output:
-        FIGURE2C_PLOT
+        VOLCANO_PLOT
     script:
-        "src/plot_Figure2C.R"
+        "../src/plot_DE_genes.R"
 
-rule plot_figure_Fuso:
+
+# given a phenotypic marker (i.e. infection or Fusobacterium_infection), look for DE genes between uninfected and infected
+rule identify_cohort_DE_genes:
+    conda:
+        "../envs/seurat-env.yaml"
+    resources:
+        mem_mb=32000, # mem="16GB" is not handled correctly by the submit script
+        disk_mb=10000,
+        time="2:00:00"
     input:
-        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
-               patient="{patient}", tax_level="genus"),
-        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
-               patient="{patient}", tax_level="genus"),
-        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
-               patient="{patient}"),
+        Seurat_subset_RDS_obj,
     output:
-        PATIENT_BACTERIA_PLOT
+        COHORT_DE_GENES
     script:
-        "src/plot_sample_bacteria.R"
+        "../src/identify_cohort_gene_markers.R"
 
 
-
-rule summarize_bacteria_positive_cells:
+rule extract_GE_for_genes_of_interest:
     input:
-        microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="{tax_level}", kingdom="{kingdom}", method="PathSeq"),
-        taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="{kingdom}", method="PathSeq"),
-        meta_data = "data/units.tsv"
+        Seurat_subset_RDS_obj,
     output:
-        POS_CELL_PLOT,
-        POS_CELL_TABLE
+        GENES_OF_INTEREST_MATRIX
     script:
-        "src/plot_bacteria_positive_cells.py"
+        "../src/extract_GE_genes_of_interest.R"
 
-
-rule calculate_sample_taxa_overlap:
+# split on specific cell-type
+rule generate_subset_rds_object:
+    conda:
+        "../envs/seurat-env.yaml"
+    resources:
+        mem_mb=32000, # mem="16GB" is not handled correctly by the submit script
+        disk_mb=10000,
+        time="2:00:00" # runtime="2h" doesn't work (it translates to 120 seconds, not minutes) and runtime="8:00:00" doesn't parse
     input:
-        SAMPLE_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA,
-        PATIENT_PATHSEQ_TAXID_MAP
+        H5_read_matrix,
+        cohort_microbe_metadata
     output:
-        SAMPLE_TAXA_OVERLAP
+        Seurat_subset_RDS_obj
     script:
-        "src/calculate_sample_taxa_overlap.py"
+        "src/generate_seurat_rds_object.R"
 
-rule combine_taxa_overlap:
+rule generate_all_rds_object:
+    conda:
+        "../envs/seurat-env.yaml"
     input:
-        expand(SAMPLE_TAXA_OVERLAP, zip, kingdom=["All"]*samples.shape[0],
-               method=["PathSeq"]*samples.shape[0], min_umis=[2]*samples.shape[0],
-               tax_level=["genus"]*samples.shape[0], patient=samples["patient"],
-               sample=samples["sample"]),
+        H5_read_matrix,
+        cohort_microbe_metadata
     output:
-        "output/combined_taxa_overlap_2.tsv"
+        Seurat_all_RDS_obj
     script:
-        "src/combine_sample_taxa_overlap.py"
+        "src/generate_seurat_rds_object_all_cells.R"
 
-rule calculate_patient_taxa_overlap:
-    input:
-        PATIENT_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA,
-        PATIENT_PATHSEQ_TAXID_MAP
+rule download_H5_read_matrix:
     output:
-        PATIENT_TAXA_OVERLAP
-    script:
-        "src/calculate_sample_taxa_overlap.py"
-
-# this counts the number of cells with >= 2 microbes per sample
-# eventual goal should be to do some sort of immune-infiltration analysis with the output
-rule identify_top_samples:
-    input:
-        microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="{tax_level}", kingdom="{kingdom}", method="PathSeq"),
-        taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="{kingdom}", method="PathSeq"),
-        meta_data = "data/units.tsv"
-    script:
-        "src/summarize_samples.py"
-
-# this rule counts the number of cells and patients that a microbe occurs in (using both >= 1 UMI and >= 2 UMIs)
-rule identify_top_taxa:
-    input:
-        microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="{tax_level}", kingdom="{kingdom}", method="PathSeq"),
-        taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="{kingdom}", method="PathSeq"),
-        meta_data = "data/units.tsv"
-    output:
-        TOP_TAXA_SUMMARY_FILE
-    script:
-        "src/identify_top_genera.py"
-
-rule identify_seq_kit_enrichment:
-    input:
-        microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"].unique(), tax_level="{tax_level}", kingdom="{kingdom}", method="PathSeq"),
-        taxid_maps = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"].unique(), kingdom="{kingdom}", method="PathSeq"),
-        meta_data = "data/units.tsv"
-    output:
-        SEQKIT_NORMAL_ENRICHMENT_FILE
-    script:
-        "src/identify_seq_kit_enrichment.py"
-
-# rule combine_read_files:
-#     input:
-#         microbe_reads = expand(PATIENT_MICROBE_READ_TABLE, patient=samples["patient"], tax_level="{tax_level}", kingdom="{kingdom}", method="{method}"),
-#         tax_ids = expand(PATIENT_PATHSEQ_TAXID_MAP, patient=samples["patient"], kingdom="{kingdom}", method="{method}")
-#     output:
-#         COHORT_MICROBE_READ_TABLE
-#     script:
-#         "src/combine_patient_reads.py"
-
-
-# rule summarize_hFDR_results:
-#     input:
-#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_tumor_cells["patient"], sample=samples_with_tumor_cells["sample"],
-#                celltype=["Tumor"]*samples_with_tumor_cells.shape[0], celltype_of_interest=["Tumor"]*samples_with_tumor_cells.shape[0],
-#                celltype_comparison=["nonTumor"]*samples_with_tumor_cells.shape[0], tax_level = ["genus"]*samples_with_tumor_cells.shape[0],
-#                method=["PathSeq"]*samples_with_tumor_cells.shape[0], kingdom=["All"]*samples_with_tumor_cells.shape[0],
-#                minprop=[0]*samples_with_tumor_cells.shape[0], min_umis = [1]*samples_with_tumor_cells.shape[0]),
-#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_myeloid_cells["patient"], sample=samples_with_myeloid_cells["sample"],
-#                celltype=["Myeloid"]*samples_with_myeloid_cells.shape[0], celltype_of_interest=["Myeloid"]*samples_with_myeloid_cells.shape[0],
-#                celltype_comparison=["nonMyeloid"]*samples_with_myeloid_cells.shape[0], tax_level = ["genus"]*samples_with_myeloid_cells.shape[0],
-#                method=["PathSeq"]*samples_with_myeloid_cells.shape[0], kingdom=["All"]*samples_with_myeloid_cells.shape[0],
-#                minprop=[0]*samples_with_myeloid_cells.shape[0], min_umis = [1]*samples_with_myeloid_cells.shape[0]),
-#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_B_cells["patient"], sample=samples_with_B_cells["sample"],
-#                celltype=["Bcell"]*samples_with_B_cells.shape[0], celltype_of_interest=["Bcell"]*samples_with_B_cells.shape[0],
-#                celltype_comparison=["nonBcell"]*samples_with_B_cells.shape[0], tax_level = ["genus"]*samples_with_B_cells.shape[0],
-#                method=["PathSeq"]*samples_with_B_cells.shape[0], kingdom=["All"]*samples_with_B_cells.shape[0],
-#                minprop=[0]*samples_with_B_cells.shape[0], min_umis = [1]*samples_with_B_cells.shape[0]),
-#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_TNKILC_cells["patient"], sample=samples_with_TNKILC_cells["sample"],
-#                celltype=["TNKILC"]*samples_with_TNKILC_cells.shape[0], celltype_of_interest=["TNKILC"]*samples_with_TNKILC_cells.shape[0],
-#                celltype_comparison=["nonTNKILC"]*samples_with_TNKILC_cells.shape[0], tax_level = ["genus"]*samples_with_TNKILC_cells.shape[0],
-#                method=["PathSeq"]*samples_with_TNKILC_cells.shape[0], kingdom=["All"]*samples_with_TNKILC_cells.shape[0],
-#                minprop=[0]*samples_with_TNKILC_cells.shape[0], min_umis = [1]*samples_with_TNKILC_cells.shape[0]),
-#         expand(SAMPLE_hFDR_FISHER_MARKERS, zip, patient=samples_with_Stromal_cells["patient"], sample=samples_with_Stromal_cells["sample"],
-#                celltype=["Stromal"]*samples_with_Stromal_cells.shape[0], celltype_of_interest=["Stromal"]*samples_with_Stromal_cells.shape[0],
-#                celltype_comparison=["nonStromal"]*samples_with_Stromal_cells.shape[0], tax_level = ["genus"]*samples_with_Stromal_cells.shape[0],
-#                method=["PathSeq"]*samples_with_Stromal_cells.shape[0], kingdom=["All"]*samples_with_Stromal_cells.shape[0],
-#                minprop=[0]*samples_with_Stromal_cells.shape[0], min_umis = [1]*samples_with_Stromal_cells.shape[0]),
-#
-#     output:
-#         "output/hFDR_results_summary.tsv"
-#     script:
-#         "src/summarize_hFDR_results.py"
-
-
-
-# rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Pelka2021/output/ raw/
-# rsync -avc --include='CB-UMI-count-MW.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Pelka2021/output/ raw/
+        H5_read_matrix
+    shell:
+        "wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE178nnn/GSE178341/suppl/GSE178341_crc10x_full_c295v4_submit.h5 --no-check-certificate -P data"

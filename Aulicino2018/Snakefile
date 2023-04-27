@@ -19,7 +19,7 @@ include: "../rules/common.smk"
 include: "../rules/STARsolo.smk"
 include: "../rules/analysis-SS2.smk"
 include: "../rules/spikein.smk"
-include: "../rules/hFDR.smk"
+#include: "../rules/hFDR.smk"
 
 units = pd.read_csv("data/units.tsv", sep="\t")
 
@@ -29,77 +29,50 @@ units = pd.read_csv("data/units.tsv", sep="\t")
 TABLE_S1_1 = join("output", "table_S1.tsv")
 
 # Figures
-FIGURE_S1A = join("output", "plots", "figure_S1A.pdf")
-FIGURE_S1B = join("output", "plots", "figure_S1B.pdf")
-FIGURE_S1C = join("output", "plots", "figure_S1C.pdf")
-FIGURE_2A_1 = join("output", "plots", "figure_2A_1.pdf")
-FIGURE_2A_2 = join("output", "plots", "figure_2A_2.pdf")
-
+FIGURE_1B = join("output", "plots", "figure_1B.pdf")
+FIGURE_2B = join("output", "plots", "figure_2B.svg")
 
 
 
 rule:
     input:
-        #TABLE_S1_1
-        #FIGURE_2A_1,
-        # FIGURE_2A_2,
-        "output/plots/piechart.svg",
-        # expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
-        #        patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
-        #        celltype_of_interest="infected", celltype_comparison=["bystander"],
-        #        norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
-        # expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
-        #        patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
-        #        celltype_of_interest="infected", celltype_comparison=["uninfected"],
-        #        norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
-        # expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
-        #        patient="Pt0", celltype=["infected"], lfc=["0.5"], tax_level="genus",
-        #        celltype_of_interest="bystander", celltype_comparison=["uninfected"],
-        #        norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0.5"),
+        TABLE_S1_1,
+        FIGURE_1B,
+        FIGURE_2B,
 
 
 ### Figures ###
 
-rule plot_piechart:
+# plot piechart
+rule plot_figure_2B:
     input:
-        "output/Pt0/summed_microbe_reads.tsv"
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="Pt0"),
     output:
-        "output/plots/piechart.svg"
+        FIGURE_2B
     script:
-        "src/plot_piechart.py"
+        "src/plot_figure_2B.py"
 
-rule plot_figure_2A:
-    input:
-        FIGURE_2A_1,
-        FIGURE_2A_2,
 
-rule plot_figure2A_1:
-    input:
-        expand(PATIENT_WILCOX_MARKERS, kingdom=["All"], method="PathSeq",
-               patient="Pt0", celltype=["infected"], lfc=["0.5"], sample="S0",
-               tax_level=["species", "genus", "family", "order", "class"],
-               celltype_of_interest="infected", celltype_comparison=["bystander"],
-               norm="spike", pvaltype="any", block="plate", direction=["both"], minprop="0")
-    output:
-        FIGURE_2A_1
-    script:
-        "src/plot_figure_2A_1.R"
-
-rule plot_figure2A_2:
+rule plot_figure_1B:
     params:
         spike_functions="../src/spike_normalization_functions.R"
     input:
         PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
-               patient="Pt0", sample="S0", tax_level="genus", norm="spike"),
+               patient="Pt0", tax_level="genus"),
         PATIENT_SPIKEIN_READCOUNT.format(patient="Pt0", sample="S0"),
         PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
-               patient="Pt0", sample="S0", tax_level="genus", norm="spike"),
+               patient="Pt0", tax_level="genus"),
         PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
-               patient="Pt0", sample="S0", tax_level="genus", norm="spike"),
+               patient="Pt0"),
     output:
-        FIGURE_2A_2
+        FIGURE_1B
     script:
-        "src/plot_figure_2A_2.R"
+        "src/plot_figure_1B.R"
 
 ### Tables ###
 
@@ -121,142 +94,3 @@ rule generate_table_S1:
         TABLE_S1_1
     script:
         "src/generate_table_S1.R"
-
-
-
-# rules and filename for other results (some in the paper and some not)
-# commented out because not used to generate key figures
-
-# PATIENT_HOST_GENE_MICROBE_GENE_CORRELATION = join(
-#     "output", "{patient}", "host-gene-microbe-gene-correlation",
-#     "spearman-correlation-{gene_of_interest}-{genome}-{celltype}-{celltype_of_interest}-{celltype_comparison}-{block}.tsv"
-#     )
-#
-# MICROBE_SPIKEIN_PLATE_CORR_TABLE = join("output", "{patient}", "{tax_level}_{method}_{kingdom}_plate_spikein_correlation_table.tsv")
-# MICROBE_SPIKEIN_CORR_TABLE = join("output", "{patient}", "{tax_level}_{method}_{kingdom}_spikein_correlation_table.tsv")
-#
-# WILCOX_PLATE_CONTAMINANTS = join("output", "contaminants-wilcox-{patient}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-#
-# PATIENT_CROSSPLATE_TTEST_MARKERS = join("output", "t-test-{patient}-{celltype}-{celltype_of_interest}-{celltype_comparison}-{infected_plate}-{bystander_plate}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-# PATIENT_CROSSPLATE_WILCOX_MARKERS = join("output", "wilcox-{patient}-{celltype}-{celltype_of_interest}-{celltype_comparison}-{infected_plate}-{bystander_plate}-{tax_level}-{method}-{norm}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-
-
-# Files for GSEA
-# PATIENT_HOST_TTEST_MARKERS = join("output", "{patient}", "host-DE", "t-test-{celltype}-{celltype_of_interest}-{celltype_comparison}-{norm}-{pvaltype}-{lfc}-{block}-{direction}.tsv")
-# PATIENT_HOST_WILCOX_MARKERS = join("output", "{patient}", "host-DE", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{norm}-{pvaltype}-{lfc}-{block}-{direction}.tsv")
-# PATIENT_HOST_WILCOX_RANK_GSEA = join("output", "{patient}", "GSEA", "wilcox-{celltype}-{celltype_of_interest}-{celltype_comparison}-{norm}-{pvaltype}-{lfc}-{block}-{direction}.rnk")
-#
-# PATIENT_HOST_GENE_MICROBE_ABUNDANCE_CORRELATION = join(
-#     "output", "{patient}", "host-gene-microbe-abundance-correlation",
-#     "spearman-correlation-{kingdom}-{tax_level}-{microbe}-{celltype}-{celltype_of_interest}-{celltype_comparison}-{block}-{method}.tsv"
-#     )
-# PATIENT_HOST_MICROBE_CORRELATION_RANK_GSEA = join(
-#     "output", "{patient}", "GSEA",
-#     "spearman-correlation-{kingdom}-{tax_level}-{microbe}-{celltype}-{celltype_of_interest}-{celltype_comparison}-{block}-{method}.rnk"
-#     )
-#
-# GSEA_CORR_TABLE = join(
-#     "output", "{patient}", "GSEA-microbe-abundance-correlation",
-#     "spearman-correlation-{kingdom}-{tax_level}-{microbe}-{celltype}-{celltype_of_interest}-{celltype_comparison}-{block}-{method}.tsv"
-#     )
-# GSEA_DE_TABLE = join("output", "{patient}", "GSEA-DE", "GO-{celltype}-{celltype_of_interest}-{celltype_comparison}-{norm}-{pvaltype}-{lfc}-{block}.tsv")
-
-
-# genera= ['Salmonella', 'Paracoccus', 'Acidovorax', 'Sphingomonas',
-#        'Phyllobacterium', 'Variovorax', 'Caldicellulosiruptor',
-#        'Thermoanaerobacter', 'Ralstonia', 'Cupriavidus', 'Anoxybacillus',
-#        'Carboxydocella', 'Sulfurihydrogenibium', 'Cloacibacterium',
-#        'Cutibacterium', 'Delftia', 'Corynebacterium', 'Bacillus',
-#        'Streptococcus', 'Staphylococcus', 'Micrococcus', 'Serratia',
-#        'Klebsiella', 'Enterobacter', 'Citrobacter', 'Ochrobactrum',
-#        'Moraxella', 'Acinetobacter', 'Methylobacterium', 'Bradyrhizobium',
-#        'Pseudomonas', 'Thermus', 'Neobacillus', 'Alkalihalobacillus']
-
-### rules for analyzing host transcriptome ###
-
-# rule calculate_patient_host_DE_using_spikeins:
-#     wildcard_constraints:
-#         norm="spike",
-#         direction="up|down|any"
-#     input:
-#         PATIENT_HUMAN_READCOUNT,
-#         PATIENT_SPIKEIN_READCOUNT,
-#         "data/units.tsv"
-#     output:
-#         PATIENT_HOST_TTEST_MARKERS,
-#         PATIENT_HOST_WILCOX_MARKERS,
-#     script:
-#         "src/identify_host_differential_expression.R"
-#
-# rule calculate_host_gene_microbe_abundance_correlation:
-#     wildcard_constraints:
-#         norm="spike"
-#     input:
-#         PATIENT_HUMAN_READCOUNT,
-#         PATIENT_SPIKEIN_READCOUNT,
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_SAMPLE_METADATA,
-#         PATIENT_PATHSEQ_TAXID_MAP
-#     output:
-#         PATIENT_HOST_GENE_MICROBE_ABUNDANCE_CORRELATION
-#     script:
-#         "../src/compute_microbe_abundance_host_gene_expression_correlation.R"
-#
-# rule calculate_patient_host_DE_using_spikeins_both:
-#     wildcard_constraints:
-#         norm="spike",
-#         direction="both"
-#     input:
-#         up=PATIENT_HOST_WILCOX_MARKERS.format(patient="{patient}", lfc="{lfc}", celltype="{celltype}",
-#                celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}",
-#                norm="{norm}", pvaltype="{pvaltype}", block="{block}", direction="up", minprop="{minprop}"),
-#         down=PATIENT_HOST_WILCOX_MARKERS.format(patient="{patient}", lfc="{lfc}", celltype="{celltype}",
-#                celltype_of_interest="{celltype_of_interest}", celltype_comparison="{celltype_comparison}",
-#                norm="{norm}", pvaltype="{pvaltype}", block="{block}", direction="up", minprop="{minprop}"),
-#     output:
-#         PATIENT_HOST_WILCOX_MARKERS,
-#     script:
-#         "../src/generate_two_sided_wilcox_pvalues_host_transcriptome.py"
-#
-# rule calculate_host_gene_microbe_gene_correlation:
-#     wildcard_constraints:
-#         norm="spike"
-#     input:
-#         PATIENT_HUMAN_READCOUNT,
-#         PATIENT_SPIKEIN_READCOUNT,
-#         Salmonella_Gene_Table,
-#         "data/units.tsv",
-#     output:
-#         PATIENT_HOST_GENE_MICROBE_GENE_CORRELATION
-#     script:
-#         "src/compute_microbe_protein_expression_host_gene_expression_correlation.R"
-#
-#
-# rule compute_spikein_correlation:
-#     input:
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_SPIKEIN_READCOUNT,
-#         PATIENT_SAMPLE_METADATA,
-#         PATHSEQ_TAXID_MAP,
-#     output:
-#         MICROBE_SPIKEIN_PLATE_CORR_TABLE,
-#         MICROBE_SPIKEIN_CORR_TABLE
-#     script:
-#         "src/compute_spikein_correlation.py"
-#
-#
-# rule calculate_markers_spikein_plate_test:
-#     wildcard_constraints:
-#         norm="spike",
-#         block="None"
-#     params:
-#         spike=SPIKE_PREFIX
-#     input:
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_STARsolo_READCOUNT,
-#         PATIENT_SAMPLE_METADATA
-#     output:
-#         PATIENT_CROSSPLATE_TTEST_MARKERS,
-#         PATIENT_CROSSPLATE_WILCOX_MARKERS
-#     script:
-#         "src/run_scran_marker_analysis_spikein_plate.R"

@@ -32,7 +32,7 @@ conda activate CSI-Microbes-env
 
 ## Software Dependencies
 
-CSI-Microbes-analysis depends on the following software packages that are installed via the conda channels conda-forge, bioconda and defaults: anytree (2.8.0)<sup>[REF](#anytree)</sup>, dplyr (1.0.5)<sup>[REF](#dplyr)</sup>, ggforce (0.3.3)<sup>[REF](#ggforce)</sup>, ggplot2 (3.3.3)<sup>[REF](#ggplot2)</sup>, ggpubr (0.4.0)<sup>[REF](#ggpubr)</sup>, rpy2 (3.4.4)<sup>[REF](#rpy2)</sup>, scater (1.16.0) <sup>[REF](#scater)</sup>, scran (1.16.0) <sup>[REF](#scran)</sup>, SingleCellExperiment (1.10.1)<sup>[REF](#SingleCellExperiment)</sup>, Snakemake (6.2.1)<sup>[REF](#Snakemake)</sup>, structSSI (1.1.1)<sup>[REF](#structSSI)</sup> and Seurat (4.0.1)<sup>[REF](#Seurat)</sup>.
+CSI-Microbes-analysis depends on the following software packages that are installed via the conda channels conda-forge, bioconda and defaults: dplyr (1.0.5)<sup>[REF](#dplyr)</sup>, ggforce (0.3.3)<sup>[REF](#ggforce)</sup>, ggplot2 (3.3.3)<sup>[REF](#ggplot2)</sup>, ggpubr (0.4.0)<sup>[REF](#ggpubr)</sup>, rpy2 (3.4.4)<sup>[REF](#rpy2)</sup>, scater (1.16.0) <sup>[REF](#scater)</sup>, scran (1.16.0) <sup>[REF](#scran)</sup>, SingleCellExperiment (1.10.1)<sup>[REF](#SingleCellExperiment)</sup>, Snakemake (6.2.1)<sup>[REF](#Snakemake)</sup>, and Seurat (4.0.1)<sup>[REF](#Seurat)</sup>.
 
 ## Reproducing key results and figures from the paper
 
@@ -46,30 +46,10 @@ To reproduce the results from Aulicino2018<sup>[REF](#Aulicino2018)</sup>, you f
 cd Aulicino2018
 ```
 
-<!-- Next, you will need to download the PathSeq, STAR and SRPRISM files using the below command
+and then you can use snakemake to reproduce the key results
 
 ```
-rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Aulicino2018/output/ raw/
-rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Aulicino2018/output/ raw/
-rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Aulicino2018/output/ raw/
-rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Aulicino2018/output/ raw/
-rsync -avc --include='*-paired-count.gff' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Aulicino2018/output/ raw/
-```
--->
-#### Reproducing Figure 2A
-
-To generate figure 2A (`output/plots/figure_2A_1.pdf` and `output/plots/figure_2A_2.pdf`) use the below command
-
-```
-snakemake --cores <number of CPUs> plot_figure_2A
-```
-
-#### Reproducing Figure S1
-
-To generate supplementary figure 1 (`output/plots/figure_S1A.pdf`, `output/plots/figure_S1B.pdf`, `output/plots/figure_S1C.pdf`) use the below command
-
-```
-snakemake --cores <number of CPUs> -s SRPRISM-analysis.smk plot_figure_S1
+snakemake --cores <number of CPUs> --use-conda all
 ```
 
 ### Reproducing results from Ben-Moshe2019
@@ -79,51 +59,12 @@ To reproduce the results from Ben-Moshe2019<sup>[REF](#BenMoshe2019)</sup>, you 
 ```
 cd Ben-Moshe2019
 ```
-<!--
-Next, you will need to download the PathSeq and SRPRISM files using the below command
+and then you can use snakemake to reproduce the key results
 
 ```
-rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ raw/
-rsync -avc --include='CB-UMI-count-SL1344.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ raw/
-```
--->
-#### Reproducing Figure 2B
-
-Next, you can generate figure 2B (`output/plots/figure_2B_1.pdf` and `output/plots/figure_2B_2.pdf`) using the below command
-
-```
-snakemake --cores <number of CPUs> plot_figure_2B
+snakemake --cores <number of CPUs> --use-conda all
 ```
 
-#### Reproducing Figure S2
-
-Next, you can generate supplementary figure 2 (`output/plots/figure_S2.pdf`) using the below command
-
-```
-snakemake --cores <number of CPUs> -s SRPRISM-analysis.smk plot_figure_S2
-```
-
-
-### Reproducing results from Lee2020
-
-To reproduce the results from Lee2020<sup>[REF](#Lee2020)</sup>, you first need to be in the `Lee2020` directory
-
-```
-cd Lee2020
-```
-<!--
-To reproduce figure 3, you first need to download the PathSeq files using the below command
-
-```
-rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Lee2020/output/ raw/
-```
--->
-
-Next, you can generate figure 3 (`output/plots/figure_3A_1.pdf`, `output/plots/figure_3A_2.pdf`, `output/plots/figure_3B_1.pdf` and `output/plots/figure_3B_2.pdf`) using the below command
-
-```
-snakemake --cores <number of CPUs> plot_figure_3
-```
 
 ### Reproducing results from Paulson2018
 
@@ -132,53 +73,55 @@ To reproduce the results from Paulson2018<sup>[REF](#Paulson2018)</sup>, you fir
 ```
 cd Paulson2018
 ```
-<!--
-To reproduce figure S3, you first need to download the PathSeq files using the below command
+
+and then you can use snakemake to reproduce the key results
 
 ```
-rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Paulson2018/output/ raw/
-```
--->
-
-Next, you can generate supplementary figure 3 (`output/plots/figure_S3A_1.pdf`, `output/plots/figure_S3A_2.pdf`, `output/plots/figure_S3B_1.pdf` and `output/plots/figure_S3B_2.pdf`) using the below command. This command will generating some warning messages that it cannot find certain files. This is expected because we do not include the files for the immune cells from the PBMC from either patient.
-
-```
-snakemake --cores <number of CPUs> plot_figure_S3
+snakemake --cores <number of CPUs> --use-conda all
 ```
 
+### Reproducing results from Pelka2021
 
-### Reproducing results from Maynard2020
-
-To reproduce the results from Maynard2020<sup>[REF](#Maynard2020)</sup>, you first need to be in the `Maynard2020` directory
-
-```
-cd Maynard2020
-```
-<!--
-To reproduce figure 4 and 5, you first need to download the PathSeq and STAR files using the below commands.
+The results from Pelka2021<sup>[REF](#Pelka2021)</sup> are divided into two directories divided by microbial vs. human results. We show how to reproduce the microbial results in this example but the others are very similar.
 
 ```
-rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
-rsync -avc --include='barcodes.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
-rsync -avc --include='features.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
-rsync -avc --include='matrix.mtx' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Maynard2020/output/ raw/
-```
--->
-#### Reproducing Figure 4
-
-Next, you can generate figure 4 (`output/plots/figure_4A_1.pdf`, `output/plots/figure_4A_2.pdf`, `output/plots/figure_4A_3.pdf`, `output/plots/figure_4B_1.pdf`, `output/plots/figure_4B_2.pdf`, `output/plots/figure_4B_3.pdf`, `output/plots/figure_4C_1.pdf`, `output/plots/figure_4C_2.pdf`) using the below command
-
-```
-snakemake --cores <number of CPUs> plot_figure_4
+cd Pelka2021
 ```
 
-#### Reproducing Figure 5A
-
-Next, you can plot figure 5A (`output/plots/figure_5A.pdf`) using the below command
+and then you can use snakemake to reproduce the key results
 
 ```
-snakemake --cores <number of CPUs> plot_figure_5a
+snakemake --cores <number of CPUs> --use-conda all
 ```
+
+### Reproducing results from Robinson2023
+
+The results from Robinson2023 are divided into four directories divided by microbial vs. human results and 10x vs. plexWell. We show how to reproduce the microbial results from the 10x dataset in this example but the others are very similar.
+
+```
+cd Robinson2023-10x
+```
+
+and then you can use snakemake to reproduce the key results
+
+```
+snakemake --cores <number of CPUs> --use-conda all
+```
+
+### Reproducing results from Zhang2021
+
+The results from Zhang2021<sup>[REF](#Zhang2021)</sup> are divided into two directories divided by microbial vs. human results. We show how to reproduce the microbial results in this example but the others are very similar.
+
+```
+cd Zhang2021
+```
+
+and then you can use snakemake to reproduce the key results
+
+```
+snakemake --cores <number of CPUs> --use-conda all
+```
+
 
 ## References
 
@@ -188,17 +131,14 @@ snakemake --cores <number of CPUs> plot_figure_5a
 
 <a id="BenMoshe2019"></a> Bossel Ben-Moshe, N. et al. Predicting bacterial infection outcomes using single cell RNA-sequencing analysis of human immune cells. Nat. Commun. 10, 3266 (2019).
 
-<a id="Lee2020"></a> Lee, H. O. et al. Lineage-dependent gene expression programs influence the immune landscape of colorectal cancer. Nat. Genet. 52, 594–603 (2020).
+<a id="Paulson2018"></a> Paulson, K. G. et al. Acquired cancer resistance to combination immunotherapy from transcriptional loss of class I HLA. Nat. Commun. 9, 3868 (2018).
 
-<a id="Maynard2020"></a> Maynard, A. et al. Therapy-Induced Evolution of Human Lung Cancer Revealed by Single-Cell RNA Sequencing. Cell 182, 1232-1251.e22 (2020).
+<a id="Pelka2021"></a> Pelka, K. et al. Spatially organized multicellular immune hubs in human colorectal cancer. Cell, (2021).
 
-<a id="Paulson2018"></a> Paulson, K. G. et al. Acquired cancer resistance to combination immunotherapy from transcriptional loss of class I HLA. Nat. Commun. 9, (2018).
-
+<a id="Zhang2021"></a> Zhang, X. et al. Dissecting esophageal squamous-cell carcinoma ecosystem by single-cell transcriptomic analysis. Nat.Commun. 12, 5291 (2021).
 
 
 ### Software Tools
-
-<a id="anytree"></a> anytree. [https://github.com/c0fec0de/anytree](https://github.com/c0fec0de/anytree)
 
 <a id="dplyr"></a> Wickham, H., François, R., Henry, L. and Müller, K (2021). dplyr: A Grammar of Data Manipulation. R package version 1.0.5. [https://CRAN.R-project.org/package=dplyr](https://CRAN.R-project.org/package=dplyr)
 
@@ -217,7 +157,5 @@ snakemake --cores <number of CPUs> plot_figure_5a
 <a id="SingleCellExperiment"></a> Lun, A. and Risso, D. (2020). SingleCellExperiment: S4 Classes for Single Cell Data. R package version 1.10.1.
 
 <a id="Snakemake"></a> Köster, J., & Rahmann, S. (2012). Snakemake-a scalable bioinformatics workflow engine. Bioinformatics, 28(19), 2520–2522. [https://doi.org/10.1093/bioinformatics/bts480](https://doi.org/10.1093/bioinformatics/bts480)
-
-<a id="structSSI"></a> Sankaran, K. & Holmes, S. structSSI: Simultaneous and selective inference for grouped or hierarchically structured data. J. Stat. Softw. 59(13), 1–21 (2014). [http://www.jstatsoft.org/v59/i13/](http://www.jstatsoft.org/v59/i13/)
 
 <a id="Seurat"></a> Hao and Hao et al. Integrated analysis of multimodal single-cell data. bioRxiv (2020) \[Seurat V4\]

@@ -15,15 +15,15 @@ rule combine_filtered_units:
     script:
         "src/combine_filtered_units.py"
 
-# rule plot_figure1D:
-#     conda:
-#         "../envs/scCustomize-env.yaml"
-#     input:
-#         "output/combined_3p_cells.rds"
-#     output:
-#         "output/plots/UMAP_all_cells.pdf"
-#     script:
-#         "src/plot_pretty_UMAP.R"
+rule plot_figure1D:
+    conda:
+        "../envs/scCustomize-env.yaml"
+    input:
+        "output/combined_3p_cells.rds"
+    output:
+        "output/plots/UMAP_all_cells.pdf"
+    script:
+        "src/plot_pretty_UMAP.R"
 
 rule perform_QC_3p_combined:
     input:

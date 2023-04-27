@@ -1,0 +1,10 @@
+name: Seurat-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-seurat
+  - r-hdf5r
+  - bioconductor-enhancedvolcano
+  - bioconductor-limma

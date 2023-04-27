@@ -7,63 +7,58 @@ wildcard_constraints:
 
 include: "../rules/common.smk"
 include: "../rules/analysis-10x.smk"
-include: "../rules/hFDR.smk"
+#include: "../rules/hFDR.smk"
 
 
-# PATIENT_MICROBE_READ_TABLE = join("output", "{patient}", "{tax_level}_{method}_{kingdom}_reads.tsv")
-# PATIENT_SAMPLE_METADATA = join("output", "{patient}", "{tax_level}_{method}_{kingdom}_metadata.tsv")
-# SAMPLE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}_{tax_level}_{method}_{kingdom}_reads.tsv")
-# SAMPLE_SAMPLE_METADATA = join("output", "{patient}", "{sample}_{tax_level}_{method}_{kingdom}_metadata.tsv")
-# PATIENT_BINOM_MARKERS = join("output", "{patient}", "binomial-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-# SAMPLE_BINOM_MARKERS = join("output", "{patient}", "{sample}", "binomial-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}.tsv")
-#
-# BINOM_PLOT = join("output", "{patient}", "plots", "binomial-plot-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{pvaltype}-{lfc}-{block}-{microbe_of_interest}.jpg")
-
-
-FIGURE4A_extended = join("output", "plots", "{patient}", "figure3b_extended_{microbe_of_interest}_{celltype}_{celltype_of_interest}_{celltype_comparison}_{tax_level}_{kingdom}_{method}.pdf")
+#FIGURE4A_extended = join("output", "plots", "{patient}", "figure3b_extended_{microbe_of_interest}_{celltype}_{celltype_of_interest}_{celltype_comparison}_{tax_level}_{kingdom}_{method}.pdf")
 COHORT_MICROBE_READ_TABLE = join("output", "All", "species_PathSeq_All_reads.tsv")
 COHORT_SAMPLE_METADATA = join("output", "All", "PathSeq_metadata.tsv")
 COHORT_PATHSEQ_TAXID_MAP = join("output", "All", "tax_id_map_All_PathSeq.tsv")
-FIG_PERCENT_POSITIVE_PLOT = join("output", "plots", "Figure_percent_positive.pdf")
-FIG_nUMIs_PLOT = join("output", "plots", "Figure_nUMIs.pdf")
-CELLTYPE_PLOT_POLYOMAVIRUS_9245 = join("output", "plots", "9245_polyomavirus_tumor_nontumor.pdf")
+#FIG_PERCENT_POSITIVE_PLOT = join("output", "plots", "Figure_percent_positive.pdf")
+FIGURE_S2B = join("output", "plots", "Figure_S2B.pdf")
+FIGURE_S2F = join("output", "plots", "Figure_S2F.pdf")
 
 
 rule all:
     input:
-        FIG_PERCENT_POSITIVE_PLOT,
-        FIG_nUMIs_PLOT,
-        CELLTYPE_PLOT_POLYOMAVIRUS_9245
+        FIGURE_S2F,
+        FIGURE_S2B,
+        expand(SAMPLE_FISHER_EXACT, patient="9245-3", sample="RelapseD565Tumor",
+        tax_level="genus", celltype="Tumor", celltype_of_interest="Tumor",
+        minprop=0, min_umis=2,
+        celltype_comparison="nonTumor", method="PathSeq", kingdom="All")
 
-rule plot_celltype_infected_9245:
+# plot % of infected cells by cell-type for patient 9245-3
+rule plot_figure_S2F:
     input:
         SAMPLE_MICROBE_READ_TABLE.format(patient="9245-3", sample="RelapseD565Tumor", tax_level="species", method="PathSeq", kingdom="All"),
         PATIENT_SAMPLE_METADATA.format(patient="9245-3", method="PathSeq"),
         PATIENT_PATHSEQ_TAXID_MAP.format(patient="9245-3", method="PathSeq", kingdom="All"),
     output:
-        CELLTYPE_PLOT_POLYOMAVIRUS_9245
+        FIGURE_S2F
     script:
-        "src/plot_9245_celltype_polyomavirus.R"
+        "src/plot_figure_S2F.R"
 
-rule plot_chemistry_read_difference:
+# rule plot_chemistry_read_difference:
+#     input:
+#         COHORT_MICROBE_READ_TABLE,
+#         COHORT_SAMPLE_METADATA,
+#         COHORT_PATHSEQ_TAXID_MAP
+#     output:
+#         FIG_PERCENT_POSITIVE_PLOT
+#     script:
+#         "src/plot_chemistry_percent_positive.R"
+
+# plot the number of UMIs by sample (and chemistry)
+rule plot_figure_S2B:
     input:
         COHORT_MICROBE_READ_TABLE,
         COHORT_SAMPLE_METADATA,
         COHORT_PATHSEQ_TAXID_MAP
     output:
-        FIG_PERCENT_POSITIVE_PLOT
+        FIGURE_S2B
     script:
-        "src/plot_chemistry_percent_positive.R"
-
-rule plot_chemistry_read_number:
-    input:
-        COHORT_MICROBE_READ_TABLE,
-        COHORT_SAMPLE_METADATA,
-        COHORT_PATHSEQ_TAXID_MAP
-    output:
-        FIG_nUMIs_PLOT
-    script:
-        "src/plot_chemistry_nUMIs.R"
+        "src/plot_figure_S2B.R"
 
 
 rule combine_patients:

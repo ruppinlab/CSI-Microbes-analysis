@@ -1,62 +1,41 @@
 from os.path import join
 
 wildcard_constraints:
-    pvaltype="all|any|some",
     patient="Pt0",
     sample="GSM3454528|GSM3454529",
     celltype="Monocyte",
 
 include: "../rules/common.smk"
 include: "../rules/analysis-10x.smk"
-include: "../rules/hFDR.smk"
 
-FIGURE_2B_1 = join("output", "plots", "figure_2B_1.pdf")
-FIGURE_2B_2 = join("output", "plots", "figure_2B_2.pdf")
-FIGURE_S1_D = join("output", "plots", "figure_S1_D.pdf")
-FIGURE_S1_E = join("output", "plots", "figure_S1_E.pdf")
-TABLE_S1_2 = join("output", "Table_S1_2.tsv")
+FIGURE_1B = join("output", "plots", "figure_1B.pdf")
+FIGURE_2B = join("output", "plots", "figure_2B.pdf")
 
 
 rule all:
     input:
-        FIGURE_S1_E,
-        # expand(SAMPLE_FISHER_EXACT, kingdom=["All"], method="PathSeq", min_umis=1,
-        #        patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
-        #        tax_level=["genus"],
-        #        celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"]),
-        # TABLE_S1_2,
-        # FIGURE_2B_1,
-        # FIGURE_2B_2,
-        # "output/plots/piechart.svg"
+        FIGURE_1B,
+        FIGURE_2B
 
 
 ### Rules for Figures ###
-rule plot_piechart:
-    input:
-        "output/Pt0/summed_microbe_reads.tsv"
-    output:
-        "output/plots/piechart.svg"
-    script:
-        "src/plot_piechart.py"
 
+# genera piechart
 rule plot_figure_2B:
     input:
-        FIGURE_2B_1,
-        FIGURE_2B_2,
-
-
-rule plot_figure_2B_1:
-    input:
-        expand(SAMPLE_FISHER_EXACT, kingdom=["All"], method="PathSeq", min_umis=1,
-               patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
-               tax_level=["species", "genus", "family", "order", "class", "phylum"],
-               celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"])
+        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
+        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
+               patient="Pt0"),
+        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
+               patient="Pt0", tax_level="genus"),
     output:
-        FIGURE_2B_1
+        FIGURE_2B
     script:
-        "src/plot_figure_2B_1.R"
+        "src/plot_figure_2B.py"
 
-rule plot_figure_2B_2:
+
+rule plot_figure_1B:
     input:
         PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
                patient="Pt0", tax_level="genus"),
@@ -65,49 +44,10 @@ rule plot_figure_2B_2:
         PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
                patient="Pt0"),
     output:
-        FIGURE_2B_2
+        FIGURE_1B
     script:
-        "src/plot_2B_2.R"
+        "src/plot_figure_1B.R"
 
-rule plot_figure_S1_D:
-    input:
-        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
-               patient="Pt0", tax_level="genus"),
-        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
-               patient="Pt0", tax_level="genus"),
-        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
-               patient="Pt0"),
-    output:
-        FIGURE_S1_D
-    script:
-        "src/plot_Salmonella_percent_no_celltype.R"
-
-rule plot_figure_S1_E:
-    input:
-        PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq",
-               patient="Pt0", tax_level="genus"),
-        PATIENT_SAMPLE_METADATA.format(kingdom="All", method="PathSeq",
-               patient="Pt0", tax_level="genus"),
-        PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
-               patient="Pt0"),
-    output:
-        FIGURE_S1_E
-    script:
-        "src/plot_Salmonella_nreads_no_celltype.R"
-
-### Rules for Supplementary Tables ###
-
-rule generate_table_S1:
-    input:
-        expand(SAMPLE_FISHER_EXACT, kingdom=["All"], method="PathSeq", min_umis=1,
-               patient="Pt0", celltype=["Monocyte"], sample="GSM3454529", minprop=0,
-               tax_level=["species", "genus", "family", "order", "class", "phylum"],
-               celltype_of_interest="Monocyte", celltype_comparison=["nonMonocyte"])
-    output:
-        TABLE_S1_2
-    script:
-        "src/generate_table_S1_2.R"
 
 # rsync -avc --include='pathseq.txt' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ data/
-# rsync -avc --include='CB-UMI-count-SL1344.tsv' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/output/ data/
 # rsync -avc --include='raw_feature_bc_matrix.h5' --include='*/' --exclude='*' helix:/data/Robinson-SB/CSI-Microbes-identification/Ben-Moshe2019/ data/
