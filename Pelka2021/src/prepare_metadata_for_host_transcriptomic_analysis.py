@@ -38,13 +38,24 @@ df["infection"] = "uninfected"
 df.loc[(df[read_df.columns] >= 1).any(axis=1), "infection"] = "bystander" # change from bystander
 df.loc[(df[read_df.columns] >= 2).any(axis=1), "infection"] = "infected"
 
+# add infection for other cut-offs
+umi_cutoffs = [1,2,3,4,5]
+
+for umi_cutoff in umi_cutoffs:
+    infection_column = "infection_{}".format(umi_cutoff)
+    print(umi_cutoff)
+    print(infection_column)
+    df[infection_column] = "uninfected"
+    df.loc[(df[read_df.columns] > 0).any(axis=1), infection_column] = "bystander" # change from bystander
+    df.loc[(df[read_df.columns] >= umi_cutoff).any(axis=1), infection_column] = "infected"
+
 # focus on the top bacteria
 genera = ["Parabacteroides", "Pseudomonas", "Prevotella", "Streptococcus",
           "Campylobacter", "Capnocytophaga", "Mycoplasma", "Bacteroides",
           "Leptotrichia", "Alloprevotella", "Sphingomonas", "Phocaeicola",
           "Corynebacterium", "Treponema", "Fusobacterium", "Shigella"]
 
-df = df[["patient", "sample", "celltype1", 'celltype2', 'infection', 'n_microbial_UMIs'] + list(genera)]
+df = df[["patient", "sample", "celltype1", 'celltype2', 'infection', 'infection_1', 'infection_2', 'infection_3', 'infection_4', 'infection_5', 'n_microbial_UMIs'] + list(genera)]
 
 # change index to be identical to the h5 file
 # C154_T_1_1_0_c1_v3-TGCAGATTCACATCAG-1 vs. C103_T_1_1_0_c1_v2_id-AAACCTGCATGCTAGT

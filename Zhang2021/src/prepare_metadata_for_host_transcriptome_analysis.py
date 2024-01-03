@@ -4,7 +4,7 @@ import pandas as pd
 df = pd.read_csv("data/units.tsv", sep="\t")
 
 df = df.loc[df["sample"].str.contains("T")]
-df = df.loc[~df.patient.isin(["P38", "P39", "P40"])]
+# df = df.loc[~df.patient.isin(["P38", "P39", "P40"])]
 
 tax_level = "genus"
 read_file = "output/{}/{}_PathSeq_All_reads.tsv"
@@ -37,6 +37,36 @@ df["n_microbial_UMIs"] = df[read_df.columns].sum(axis=1)
 df["infection"] = "uninfected"
 df.loc[(df[read_df.columns] >= 1).any(axis=1), "infection"] = "bystander" # change from bystander
 df.loc[(df[read_df.columns] >= 2).any(axis=1), "infection"] = "infected"
+# add infection for other cut-offs
+umi_cutoffs = [1,2,3,4,5]
+
+for umi_cutoff in umi_cutoffs:
+    infection_column = "infection_{}".format(umi_cutoff)
+    print(umi_cutoff)
+    print(infection_column)
+    df[infection_column] = "uninfected"
+    df.loc[(df[read_df.columns] > 0).any(axis=1), infection_column] = "bystander" # change from bystander
+    df.loc[(df[read_df.columns] >= umi_cutoff).any(axis=1), infection_column] = "infected"
+
+# special handle for P38/P39/P40 infected cells vs other infected
+df["flavo_infection"] = "uninfected"
+df.loc[(df[read_df.columns] >= 2).any(axis=1), "flavo_infection"] = "other_infected"
+df.loc[df.patient.isin(["P38", "P39", "40"]), "flavo_infection"] = "flavo_infected"
+
+# DE for P38
+df["P38_flavo_infection"] = "uninfected"
+df.loc[df["patient"] == "P38", "P38_flavo_infection"] = "infected"
+df.loc[df["patient"].isin(["P39", "P40"]), "P38_flavo_infection"] = "other"
+
+# DE for P39
+df["P39_flavo_infection"] = "uninfected"
+df.loc[df["patient"] == "P39", "P39_flavo_infection"] = "infected"
+df.loc[df["patient"].isin(["P38", "P40"]), "P39_flavo_infection"] = "other"
+
+# DE for P40
+df["P40_flavo_infection"] = "uninfected"
+df.loc[df["patient"] == "P40", "P40_flavo_infection"] = "infected"
+df.loc[df["patient"].isin(["P38", "P39"]), "P40_flavo_infection"] = "other"
 
 # focus on the top bacteria
 genera = ["Parabacteroides", "Pseudomonas", "Prevotella", "Streptococcus",
@@ -44,7 +74,7 @@ genera = ["Parabacteroides", "Pseudomonas", "Prevotella", "Streptococcus",
           "Leptotrichia", "Alloprevotella", "Sphingomonas", "Phocaeicola",
           "Corynebacterium", "Treponema", "Fusobacterium", "Shigella"]
 
-df = df[["patient", "sample", "celltype1", 'celltype2', "infection", 'n_microbial_UMIs'] + list(genera)]
+df = df[["patient", "sample", "celltype1", 'celltype2', "infection", "flavo_infection", "P38_flavo_infection", "P39_flavo_infection", "P40_flavo_infection", 'infection_1', 'infection_2', 'infection_3', 'infection_4', 'infection_5', 'n_microbial_UMIs'] + list(genera)]
 
 # binarize infection for the top genera
 for genus in genera:

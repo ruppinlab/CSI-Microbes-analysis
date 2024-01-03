@@ -1,0 +1,28 @@
+wildcard_constraints:
+    sample="SCAF2961_1_Uninfected|SCAF2962_2_HK|SCAF2963_3_Live|SCAF2965_5_Live"
+
+rule all:
+    input:
+        expand("output/{sample}_comparison_table.tsv", sample=["SCAF2961_1_Uninfected", "SCAF2962_2_HK", "SCAF2963_3_Live", "SCAF2965_5_Live"]),
+        expand("output/INVADEseq_same_bam/{sample}_comparison_table.tsv", sample=["SCAF2961_1_Uninfected", "SCAF2962_2_HK", "SCAF2963_3_Live", "SCAF2965_5_Live"]),
+
+
+
+rule compare_methods:
+    input:
+        "INVADEseq_data/P1-{sample}.gex.filtered_matrix.genus.csv",
+        "SAHMI_data/{sample}.cell_line_quantile_hits.tsv",
+        "SAHMI_data/{sample}.counts.txt"
+    output:
+        "output/{sample}_comparison_table.tsv"
+    script:
+        "src/compare_methods.py"
+
+
+rule compare_methods_same_bam:
+    input:
+        "INVADEseq_same_bam/P1-{sample}.gex.filtered_matrix.genus.csv",
+    output:
+        "output/INVADEseq_same_bam/{sample}_comparison_table.tsv"
+    script:
+        "src/compare_methods_same_bam.py"

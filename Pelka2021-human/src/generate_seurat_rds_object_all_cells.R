@@ -4,7 +4,7 @@ library(ggplot2)
 
 # read.matrix <- Read10X_h5("data/GSE178341_crc10x_full_c295v4_submit.h5")
 read.matrix <- Read10X_h5(snakemake@input[[1]])
-# meta.data <- read.table("data/cohort_metadata.tsv", sep="\t", header=TRUE, row.names = 1)
+# meta.data <- read.table("data/metadata_for_host_transcriptome_analysis.tsv", sep="\t", header=TRUE, row.names = 1)
 meta.data <- read.table(snakemake@input[[2]], sep="\t", header=TRUE, row.names = 1)
 
 cell.names <- intersect(unique(colnames(read.matrix)), unique(rownames(meta.data)))
@@ -30,6 +30,18 @@ tumor.obj <- FindVariableFeatures(tumor.obj, selection.method = "vst", nfeatures
 
 all.genes <- rownames(tumor.obj)
 tumor.obj <- ScaleData(tumor.obj, features = all.genes)
+
+write.table(FetchData(object = tumor.obj, vars = c("CXCL8")), file="output/CXCL8_expression.tsv", sep="\t")
+
+pcs <- c("PC_1", "PC_2", "PC_3", "PC_4", "PC_5", "PC_6", "PC_7", "PC_8", "PC_9", "PC_10", "PC_11", "PC_12", "PC_13", "PC_14", "PC_15")
+
+write.table(FetchData(object = tumor.obj, vars = c()), file="output/CXCL8_expression.tsv", sep="\t")
+
+
+FeaturePlot(tumor.obj, features = "CXCL8", cols = c("blue", "red"),
+            split.by = c("celltype1", "infection"), 
+            pt.size = 1, combine = FALSE)
+
 tumor.obj <- RunPCA(tumor.obj, features = VariableFeatures(object = tumor.obj))
 
 # print(tumor.obj[["pca"]], dims = 1:5, nfeatures = 5)

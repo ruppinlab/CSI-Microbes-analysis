@@ -1,13 +1,13 @@
 import pandas as pd
 from numpy import log2
-from scipy.stats import fisher_exact, combine_pvalues
-
+from scipy.stats import fisher_exact, combine_pvalues, chisquare
+from os.path import join
 
 def get_expected_infected_cells(df, celltype_col):
     # calculate the expected number of infected cells per cell-type
     n_expected_df = df.groupby(["patient", "sample"]).apply(lambda x: x.loc[(x["infection"] == "infected")].shape[0]*(x[celltype_col].value_counts()/x.shape[0]))
     n_expected_df = n_expected_df.reset_index()
-    n_expected_df = n_expected_df.rename(columns={celltype_col: "n_expected_infected", "level_2": celltype_col})
+    n_expected_df = n_expected_df.rename(columns={"count": "n_expected_infected"})
     return n_expected_df
     # return n_expected_df.groupby(celltype_col)["n_expected_infected"].sum()
 
@@ -32,7 +32,7 @@ def single_sample_celltype_fisher_exact(df, sample, celltype_col, celltype_of_in
     b = celltype_of_interest_df.loc[celltype_of_interest_df.infection != "infected"].shape[0]
     c = non_celltype_of_interest_df.loc[non_celltype_of_interest_df.infection == "infected"].shape[0]
     d = non_celltype_of_interest_df.loc[non_celltype_of_interest_df.infection != "infected"].shape[0]
-    res = fisher_exact([[a, b], [c, d]], alternative="greater")
+    res = fisher_exact([[a, b], [c, d]], alternative=snakemake.wildcards["direction"])
     return res[1]
 
 def calculate_p_value(df, celltype_col, celltype_of_interest):
@@ -94,8 +94,11 @@ meta_df.index = meta_df.apply(lambda x: "{}-{}".format(x["sample"], x["barcode"]
 df = meta_df[["patient", "sample", "barcode", "celltype1", "celltype2"]].merge(read_df, left_index=True, right_index=True)
 
 df["infection"] = "uninfected"
-df.loc[(df[genera] >= 1).any(axis=1), "infection"] = "bystander" # change from bystander
-df.loc[(df[genera] >= 2).any(axis=1), "infection"] = "infected"
+# df.loc[(df[genera] >= 1).any(axis=1), "infection"] = "bystander" # change from bystander
+print(snakemake.wildcards["cutoff"])
+df.loc[(df[genera] >= int(snakemake.wildcards["cutoff"])).any(axis=1), "infection"] = "infected"
+
+# df.loc[(df[genera] >= 2).any(axis=1), "infection"] = "infected"
 
 # drop all the genera columns now
 df = df[["patient", "sample", "barcode", "celltype1", "celltype2", "infection"]]

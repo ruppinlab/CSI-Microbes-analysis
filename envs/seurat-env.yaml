@@ -6,5 +6,6 @@ channels:
 dependencies:
   - r-seurat
   - r-hdf5r
+  - r-remotes
   - bioconductor-enhancedvolcano
   - bioconductor-limma
