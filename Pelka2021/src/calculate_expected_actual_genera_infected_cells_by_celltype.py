@@ -1,19 +1,27 @@
 import pandas as pd
 from numpy import log2
 
-def get_expected_infected_cells(df, celltype, microbe):
+def get_expected_infected_cells(df, celltype, microbe, cutoff):
     # calculate the expected number of infected cells per cell-type
-    n_expected_df = df.groupby(["patient", "sample"]).apply(lambda x: x.loc[(x[microbe] >= 2)].shape[0]*(x[celltype].value_counts()/x.shape[0]))
+    n_expected_df = df.groupby(["patient", "sample"]).apply(lambda x: x.loc[(x[microbe] >= cutoff)].shape[0]*(x[celltype].value_counts()/x.shape[0]))
     n_expected_df = n_expected_df.reset_index()
-    n_expected_df = n_expected_df.rename(columns={celltype: "n_expected_infected", "level_2": celltype})
-    return n_expected_df.groupby(celltype)["n_expected_infected"].sum()
+    n_expected_df = n_expected_df.rename(columns={"count": "n_expected_infected"})
+    return n_expected_df.groupby([celltype])["n_expected_infected"].sum()
 
-def get_n_infected_cells(df, celltype, microbe):
+
+def get_n_infected_cells(df, celltype, microbe, cutoff):
     # calculate the actual number of infected cells per cell-type
-    n_infection_df = df.groupby(["patient", "sample", celltype]).apply(lambda x: x.loc[(x[microbe] >= 2)].shape[0])
+    n_infection_df = df.groupby(["patient", "sample", celltype]).apply(lambda x: x.loc[(x[microbe] >= cutoff)].shape[0])
     return n_infection_df.groupby(celltype).sum()
 
 
+# from os.path import join
+# units = pd.read_csv("data/units.tsv", sep="\t")
+# units = units.loc[units["Is_Tumor"] == "Yes"]
+# df_v3 = units.loc[units["10x_chemistry"] == "v3"]
+# sample_df_v3 = df_v3[["patient", "sample"]].drop_duplicates()
+# SAMPLE_MICROBE_READ_TABLE = join("output", "{patient}", "{sample}", "{tax_level}_{method}_{kingdom}_reads.tsv")
+# files = [SAMPLE_MICROBE_READ_TABLE.format(patient=row.patient, sample=row["sample"], tax_level="genus", method="PathSeq", kingdom="All") for _, row in sample_df_v3.iterrows()]
 files = snakemake.input["microbe_reads"]
 output = []
 for f in files:
@@ -23,9 +31,12 @@ for f in files:
 # concat merges on the index by default
 read_df = pd.concat(output, join="outer", axis=1).fillna(0)
 
+# PATIENT_PATHSEQ_TAXID_MAP = join("output", "{patient}", "tax_id_map_{kingdom}_{method}.tsv")
+# patient_df_v3 = df_v3[["patient"]].drop_duplicates()
+# tax_files = [PATIENT_PATHSEQ_TAXID_MAP.format(patient=row.patient, method="PathSeq", kingdom="All") for _, row in patient_df_v3.iterrows()]
 # add the tax id information
-output = []
 tax_files = snakemake.input["tax_ids"]
+output = []
 for f in tax_files:
     output.append(pd.read_csv(f, sep="\t"))
 
@@ -37,12 +48,9 @@ read_df = read_df.drop(columns=["tax_id", "taxa_level"])
 
 read_df = read_df.T
 # drop any genera without at least 2 UMIs in at least one cell
-print(read_df.shape)
 read_df = read_df[read_df.columns[(read_df >= 2).any(axis=0)]]
-print(read_df.shape)
 genera = read_df.columns
-print(genera)
-print(read_df)
+
 
 meta_df = pd.read_csv("data/units.tsv", sep="\t")
 meta_df = meta_df.loc[(meta_df["10x_chemistry"] == "v3") & (meta_df["Is_Tumor"] == "Yes")]
@@ -51,13 +59,14 @@ df = meta_df[["patient", "sample", "barcode", "celltype1", "celltype2"]].merge(r
 
 # drop all the genera columns now
 # df = df[["patient", "sample", "barcode", "celltype1", "celltype2", "infection"]]
+cutoff = int(snakemake.wildcards["cutoff"])
 
 
 output = []
 
 for genus in genera:
-    expected_infected_cells_per_celltype = get_expected_infected_cells(df, "celltype1", genus)
-    infected_cells_per_celltype = get_n_infected_cells(df, "celltype1", genus)
+    expected_infected_cells_per_celltype = get_expected_infected_cells(df, "celltype1", genus, cutoff)
+    infected_cells_per_celltype = get_n_infected_cells(df, "celltype1", genus, cutoff)
     # print(genera)
     # print(log2(infected_cells_per_celltype/expected_infected_cells_per_celltype))
     d = {"microbe": genus,

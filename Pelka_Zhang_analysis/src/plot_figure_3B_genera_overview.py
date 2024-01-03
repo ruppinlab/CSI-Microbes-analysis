@@ -6,15 +6,15 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 
-pelka_df = pd.read_csv("../Pelka2021/output/expected_actual_genera_infected_cells_per_celltype1.tsv", sep="\t")
-zhang_df = pd.read_csv("../Zhang2021/output/expected_actual_genera_infected_cells_per_celltype1.tsv", sep="\t")
+pelka_df = pd.read_csv("../Pelka2021/output/expected_actual_genera_infected_greater_2umis_cells_per_celltype1.tsv", sep="\t")
+zhang_df = pd.read_csv("../Zhang2021/output/expected_actual_genera_infected_greater_2umis_cells_per_celltype1.tsv", sep="\t")
 
 pelka_num_infected_cells = pelka_df.groupby("microbe")["actual_infected_cells"].sum()
 
 zhang_num_infected_cells = zhang_df.groupby("microbe")["actual_infected_cells"].sum()
 
-zhang_top_genera = zhang_num_infected_cells.loc[zhang_num_infected_cells > 10].index
-pelka_top_genera = pelka_num_infected_cells.loc[pelka_num_infected_cells > 10].index
+zhang_top_genera = zhang_num_infected_cells.loc[zhang_num_infected_cells >= 10].index
+pelka_top_genera = pelka_num_infected_cells.loc[pelka_num_infected_cells >= 10].index
 
 top_genera = list(set(list(zhang_top_genera) + list(pelka_top_genera)))
 
@@ -28,7 +28,7 @@ pelka_other_myeloid_df["log2FC"] = np.log2(pelka_other_myeloid_df["actual_infect
 pelka_other_myeloid_df["microbe"] = "Other"
 pelka_other_myeloid_df["celltype1"] = "Myeloid"
 pelka_myeloid_df = pd.concat([pelka_top_myeloid_df, pelka_other_myeloid_df.to_frame().T])
-pelka_myeloid_df["cancer_type"] = "Colorectal"
+pelka_myeloid_df["cancer_type"] = "Pelka2021"
 # repeat for zhang
 zhang_top_myeloid_df = zhang_myeloid_df.loc[zhang_myeloid_df.microbe.isin(top_genera)].copy()
 zhang_other_myeloid_df = zhang_myeloid_df.loc[~zhang_myeloid_df.microbe.isin(top_genera)].copy()
@@ -37,7 +37,7 @@ zhang_other_myeloid_df["log2FC"] = np.log2(zhang_other_myeloid_df["actual_infect
 zhang_other_myeloid_df["microbe"] = "Other"
 zhang_other_myeloid_df["celltype1"] = "Myeloid"
 zhang_myeloid_df = pd.concat([zhang_top_myeloid_df, zhang_other_myeloid_df.to_frame().T])
-zhang_myeloid_df["cancer_type"] = "Esophageal"
+zhang_myeloid_df["cancer_type"] = "Zhang2021"
 
 df = pd.concat([pelka_myeloid_df, zhang_myeloid_df])
 df["log2FC"] = df.log2FC.replace(-np.Inf, np.nan)
@@ -46,17 +46,17 @@ df = df[["microbe", "log2FC", "cancer_type"]]
 
 # get the number of infected cells
 pelka_num_infected_cells = pelka_num_infected_cells.reset_index()
-pelka_num_infected_cells["cancer_type"] = "Colorectal"
+pelka_num_infected_cells["cancer_type"] = "Pelka2021"
 other_infected_cells = pelka_num_infected_cells.loc[~pelka_num_infected_cells.microbe.isin(top_genera)]["actual_infected_cells"].sum()
 pelka_num_infected_cells = pelka_num_infected_cells.loc[pelka_num_infected_cells.microbe.isin(top_genera)]
-other_df = pd.Series({"cancer_type": "Colorectal", "microbe": "Other", "actual_infected_cells": other_infected_cells}).to_frame().T
+other_df = pd.Series({"cancer_type": "Pelka2021", "microbe": "Other", "actual_infected_cells": other_infected_cells}).to_frame().T
 pelka_num_infected_cells = pd.concat([pelka_num_infected_cells, other_df])
 
 zhang_num_infected_cells = zhang_num_infected_cells.reset_index()
-zhang_num_infected_cells["cancer_type"] = "Esophageal"
+zhang_num_infected_cells["cancer_type"] = "Zhang2021"
 other_infected_cells = zhang_num_infected_cells.loc[~zhang_num_infected_cells.microbe.isin(top_genera)]["actual_infected_cells"].sum()
 zhang_num_infected_cells = zhang_num_infected_cells.loc[zhang_num_infected_cells.microbe.isin(top_genera)]
-other_df = pd.Series({"cancer_type": "Esophageal", "microbe": "Other", "actual_infected_cells": other_infected_cells}).to_frame().T
+other_df = pd.Series({"cancer_type": "Zhang2021", "microbe": "Other", "actual_infected_cells": other_infected_cells}).to_frame().T
 zhang_num_infected_cells = pd.concat([zhang_num_infected_cells, other_df])
 
 # normalize for the number of cells sequenced - 171052 for Zhang and 90312 for Pelka

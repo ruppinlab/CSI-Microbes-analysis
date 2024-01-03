@@ -4,8 +4,7 @@ library(patchwork)
 suppressMessages(require(DoubletFinder))
 
 
-data <- Read10X(data.dir = "raw/P1-SCAF2965_5_Live/outs/filtered_feature_bc_matrix")
-
+data <- Read10X_h5("raw/P1-SCAF2965_5_Live/outs/raw_feature_bc_matrix.h5")
 live <- CreateSeuratObject(counts = data, project="live", min.cells = 3, min.features=200)
 
 live[["percent.mt"]] <- PercentageFeatureSet(live, pattern = "^MT-")

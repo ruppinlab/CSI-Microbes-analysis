@@ -1,17 +1,20 @@
 import pandas as pd
 from numpy import log2
 
-def get_expected_infected_cells(df, celltype, microbe):
+def get_expected_infected_cells(df, celltype, microbe, cutoff):
     # calculate the expected number of infected cells per cell-type
-    n_expected_df = df.groupby(["patient", "sample"]).apply(lambda x: x.loc[(x[microbe] >= 2)].shape[0]*(x[celltype].value_counts()/x.shape[0]))
+    n_expected_df = df.groupby(["patient", "sample"]).apply(lambda x: x.loc[(x[microbe] >= cutoff)].shape[0]*(x[celltype].value_counts()/x.shape[0]))
     n_expected_df = n_expected_df.reset_index()
-    n_expected_df = n_expected_df.rename(columns={celltype: "n_expected_infected", "level_2": celltype})
-    return n_expected_df.groupby(celltype)["n_expected_infected"].sum()
+    n_expected_df = n_expected_df.rename(columns={"count": "n_expected_infected"})
+    return n_expected_df.groupby([celltype])["n_expected_infected"].sum()
 
-def get_n_infected_cells(df, celltype, microbe):
+
+def get_n_infected_cells(df, celltype, microbe, cutoff):
     # calculate the actual number of infected cells per cell-type
-    n_infection_df = df.groupby(["patient", "sample", celltype]).apply(lambda x: x.loc[(x[microbe] >= 2)].shape[0])
+    n_infection_df = df.groupby(["patient", "sample", celltype]).apply(lambda x: x.loc[(x[microbe] >= cutoff)].shape[0])
     return n_infection_df.groupby(celltype).sum()
+
+
 # meta_df = pd.read_csv("data/units.tsv", sep="\t")
 files = snakemake.input["microbe_reads"]
 output = []
@@ -40,15 +43,14 @@ meta_df = pd.read_csv("data/units.tsv", sep="\t")
 meta_df = meta_df.loc[meta_df["sample"].str.contains("T")]
 meta_df.index = meta_df.apply(lambda x: "{}-{}".format(x["sample"], x["barcode"]), axis=1)
 df = meta_df[["patient", "sample", "barcode", "celltype1", "celltype2"]].merge(read_df, left_index=True, right_index=True)
-# microbe_of_interest = "Serratia"
-# celltype_of_interest = "celltype1"
 
+cutoff = int(snakemake.wildcards["cutoff"])
 
 output = []
 
 for genus in genera:
-    expected_infected_cells_per_celltype = get_expected_infected_cells(df, "celltype1", genus)
-    infected_cells_per_celltype = get_n_infected_cells(df, "celltype1", genus)
+    expected_infected_cells_per_celltype = get_expected_infected_cells(df, "celltype1", genus, cutoff)
+    infected_cells_per_celltype = get_n_infected_cells(df, "celltype1", genus, cutoff)
     # print(genera)
     # print(log2(infected_cells_per_celltype/expected_infected_cells_per_celltype))
     d = {"microbe": genus,

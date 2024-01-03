@@ -52,6 +52,8 @@ rule combine_gene_expression_one_patient:
         "../src/concatenate_STARsolo_plate.py"
 
 rule convert_STARsolo_output_to_csv:
+    conda:
+        "../envs/seurat-env.yaml"
     params:
         STARsolo_PE_dir,
         #STARsolo_SE_dir

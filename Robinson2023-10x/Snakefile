@@ -2,7 +2,6 @@ from os.path import join
 import pandas as pd
 
 
-#patients = pd.read_csv("data/patients.tsv", sep="\t")
 samples = pd.read_csv("data/samples.tsv", sep="\t")[["patient", "sample"]].drop_duplicates()
 units = pd.read_csv("data/units.tsv", sep="\t")
 
@@ -24,7 +23,7 @@ SRPRISM_input_file = "raw/SRPRISM/{patient}/{sample}/Fn-unpaired-count.gff"
 
 FIGURE_1E_PLOT = join("output", "plots", "Figure_1E.pdf")
 FIGURE_1F_PLOT = join("output", "plots", "Figure_1F.pdf")
-FIGURE_2A_PIECHART = "output/plots/figure_2A_piechart.svg"
+GENERA_PIECHART = "output/plots/genera_piechart_3p_5p_live.svg"
 FIGURE_S2D_PLOT = join("output", "plots", "Figure_S2D.pdf")
 
 FIGURE_S1C_PIECHART_3p = "output/plots/figure_S1C_piechart_3p.svg"
@@ -32,36 +31,27 @@ FIGURE_S1C_PIECHART_5p = "output/plots/figure_S1C_piechart_5p.svg"
 #FIGS1E_PLOT = join("output", "plots", "FigureS1E.pdf")
 #FIGS2_PLOT = join("output", "plots", "FigureS2.pdf")
 # SAMPLE_FISHER_EXACT = join("output", "{patient}", "{sample}", "fisher-exact-{celltype}-{celltype_of_interest}-{celltype_comparison}-{tax_level}-{method}-{kingdom}-{minprop}-{min_umis}.tsv")
-TABLE_S1 = "output/table_s1.tsv"
+TABLE_S1 = "output/table_s1_{min_umis}umis.tsv"
 
 rule all:
     input:
+        GENERA_PIECHART,
+        expand(TABLE_S1, min_umis=2),
         FIGURE_1E_PLOT,
         FIGURE_1F_PLOT,
         FIGURE_S2D_PLOT,
-        FIGURE_2A_PIECHART,
-        FIGURE_S1C_PIECHART_3p,
-        FIGURE_S1C_PIECHART_5p,
-        TABLE_S1
-        # "output/plots/piechart.svg",
-        # FIGS1D_PLOT,
-        # FIGS1E_PLOT,
-        # FIGS2_PLOT
-        # PATIENT_MICROBE_READ_TABLE.format(kingdom="All", method="PathSeq", patient="P1", tax_level="genus"),
 
 
 rule generate_table_S1:
     input:
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="THP1", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="THP1", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2962_2_HK", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="THP1", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
-        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2962_2_HK", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis=2),
+        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis="{min_umis}"),
+        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis="{min_umis}"),
+        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="THP1", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis="{min_umis}"),
+        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="THP1", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis="{min_umis}"),
+        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2963_3_Live", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis="{min_umis}"),
+        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2965_5_Live", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis="{min_umis}"),
+        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2962_2_HK", celltype="celltype1", celltype_of_interest="HCT116", celltype_comparison="THP1", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis="{min_umis}"),
+        SAMPLE_FISHER_EXACT.format(patient="P1", sample="SCAF2962_2_HK", celltype="celltype1", celltype_of_interest="THP1", celltype_comparison="Jurkat", tax_level="genus", method="PathSeq", kingdom="All", minprop=0, min_umis="{min_umis}"),
     output:
         TABLE_S1
     script:
@@ -132,9 +122,9 @@ rule plot_genera_piechart:
         PATIENT_PATHSEQ_TAXID_MAP.format(kingdom="All", method="PathSeq",
                patient="P1"),
     output:
-        FIGURE_2A_PIECHART
+        GENERA_PIECHART
     script:
-        "src/plot_Fig2A_piechart.py"
+        "src/plot_genera_piechart.py"
 
 rule generate_Fuso_RNA_type_table:
     input:

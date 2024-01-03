@@ -61,46 +61,6 @@ rule calculate_Fishers_exact_sample:
     script:
         "../src/calculate_Fisher_exact_test.R"
 
-# rule plot_sample_binomial_result:
-#     input:
-#         SAMPLE_MICROBE_READ_TABLE,
-#         SAMPLE_SAMPLE_METADATA,
-#         PATIENT_PATHSEQ_TAXID_MAP
-#     output:
-#         SAMPLE_BINOM_PLOT
-#     script:
-#         "../src/plot_binomial_result.R"
-
-## rules to calculate the binomials at the sample or patient level ###
-rule calculate_sample_binomial_markers:
-    input:
-        SAMPLE_MICROBE_READ_TABLE,
-        PATIENT_SAMPLE_METADATA,
-        PATIENT_PATHSEQ_TAXID_MAP
-    output:
-        SAMPLE_BINOM_MARKERS,
-    script:
-        "../src/run_scran_binomial_marker_analysis.R"
-#
-# rule calculate_patient_binomial_markers:
-#     input:
-#         PATIENT_MICROBE_READ_TABLE,
-#         PATIENT_SAMPLE_METADATA,
-#         PATIENT_PATHSEQ_TAXID_MAP
-#     output:
-#         PATIENT_BINOM_MARKERS,
-#         #PATIENT_BINOM_VOLCANO
-#     script:
-#         "../src/run_scran_binomial_marker_analysis.R"
-
-# rule convert_binomial_markers_taxid_to_name:
-#     input:
-#         PATIENT_BINOM_MARKERS,
-#         PATHSEQ_TAXID_MAP
-#     output:
-#         PATIENT_BINOM_MARKERS_TAXA_NAME
-#     script:
-#         "../src/convert_taxid_to_taxa_name.R"
 
 ### convert PathSeq output files to a matrix of microbial counts ###
 
@@ -117,20 +77,8 @@ rule convert_PathSeq_to_readcounts:
         expand(PATIENT_MICROBE_READ_TABLE, patient="{patient}", kingdom="All", method="{method}",
                tax_level=["root", "superkingdom", "kingdom", "phylum", "class",
                           "order", "family", "genus", "species", "strain", "no_rank"]),
-
     script:
         "../src/convert_10x-PathSeq_output_to_read_counts.py"
 
 
-# rule generate_cohort_wide_PathSeq_readcounts:
-#     wildcard_constraints:
-#         method="PathSeq"
-#     params:
-#         join("raw", "PathSeq", "{}-{}-{}", "pathseq.txt")
-#     input:
-#         "data/units.tsv"
-#     output:
-#         COHORT_MICROBE_READ_TABLE,
-#         COHORT_SAMPLE_METADATA
-#     script:
-#         "../src/convert_10x-PathSeq_output_to_read_counts_cohort.py"
+

@@ -1,8 +1,10 @@
-
+wildcard_constraints:
+    sample="SCAF2961_1_Uninfected|SCAF2962_2_HK|SCAF2963_3_Live|SCAF2965_5_Live"
 
 rule all:
     input:
-        expand("output/empty_droplet_CB/{sample}_comparison_table.tsv", sample=["SCAF2961_1_Uninfected", "SCAF2962_2_HK", "SCAF2963_3_Live", "SCAF2965_5_Live"])
+        expand("output/{sample}_comparison_table.tsv", sample=["SCAF2961_1_Uninfected", "SCAF2962_2_HK", "SCAF2963_3_Live", "SCAF2965_5_Live"]),
+        expand("output/INVADEseq_same_bam/{sample}_comparison_table.tsv", sample=["SCAF2961_1_Uninfected", "SCAF2962_2_HK", "SCAF2963_3_Live", "SCAF2965_5_Live"]),
 
 
 

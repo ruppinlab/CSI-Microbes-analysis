@@ -9,7 +9,6 @@ dependencies:
   - bioconductor-singlecellexperiment
   - pandas
   - openpyxl
-  - r-seurat
   - r-remotes
   - r-fields
   - r-ggplot2

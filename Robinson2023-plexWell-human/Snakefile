@@ -19,7 +19,8 @@ units = pd.read_csv("data/unfiltered-units.tsv", sep="\t")
 
 rule:
     input:
-        "output/plots/UMAP_plot.svg"
+        "output/filtered-units.tsv",
+        # "output/plots/UMAP_plot.svg"
 
 
 rule pretty_plot_UMAP:
